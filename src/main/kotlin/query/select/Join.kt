@@ -5,7 +5,10 @@ import query.table.Table
 
 enum class JoinType {
     INNER,
-    LEFT
+    LEFT,
+    RIGHT,
+    OUTER,
+    FULL,
 }
 
 class Join(
@@ -31,6 +34,9 @@ class Join(
         when (joinType) {
             JoinType.INNER -> joinClause.append("INNER JOIN ")
             JoinType.LEFT -> joinClause.append("LEFT JOIN ")
+            JoinType.RIGHT -> joinClause.append("RIGHT JOIN ")
+            JoinType.OUTER -> joinClause.append("OUTER JOIN ")
+            JoinType.FULL -> joinClause.append("FULL JOIN ")
         }
 
         joinClause.append(joinTable.name())
