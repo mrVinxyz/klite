@@ -7,24 +7,11 @@ import query.table.Column
 import query.table.Table
 
 class Inserter(private val table: Table) {
-
     private val insertColumns = mutableListOf<Column<*>>()
-    private val args = mutableListOf<Any>()
-
-    operator fun <T> set(column: Column<*>, value: T?): Inserter {
-        value?.let { v ->
-            insertColumns.add(column)
-            args.add(v)
-        }
-
-        return this
-    }
+    private val argsValues = mutableListOf<Any>()
 
     fun insert(init: (Inserter) -> Unit): Inserter {
-        val inserter = Inserter(table)
-        init(inserter)
-
-        return inserter
+        return Inserter(table).apply(init)
     }
 
     fun insert(vararg column: Column<*>): Inserter {
@@ -32,9 +19,31 @@ class Inserter(private val table: Table) {
         return this
     }
 
+    operator fun <T> set(column: Column<*>, value: T?): Inserter {
+        value?.let { v ->
+            insertColumns.add(column)
+            argsValues.add(v)
+        }
+
+        return this
+    }
+
     fun values(vararg value: Any?): Inserter {
+        val nullColumns = mutableListOf<Column<*>>()
+
         value.forEachIndexed { index, any ->
-            if (any != null) args.add(any) else insertColumns.removeAt(index)
+            if (any != null) argsValues.add(any) else nullColumns.add(insertColumns[index])
+        }
+
+        insertColumns.removeAll(nullColumns)
+
+        return this
+    }
+
+    fun values(map: Map<String, Any?>): Inserter {
+
+        insertColumns.forEach { column ->
+            map[column.key()]?.let { value -> value.let { argsValues.add(value) } }
         }
 
         return this
@@ -56,26 +65,24 @@ class Inserter(private val table: Table) {
         sql.append(insertColumns.joinToString(", ") { "?" })
         sql.append(")")
 
-        return Pair(sql.toString(), args)
+        return Pair(sql.toString(), argsValues)
     }
+}
 
-    fun persist(conn: Connection): Result<Int> {
-        return runCatching {
-                val (sql, args) = sqlArgs()
-                val stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)
-                setParameters(stmt, args)
-                stmt.executeUpdate()
+fun Inserter.persist(conn: Connection): Result<Int> {
+    return runCatching {
+            val (sql, args) = sqlArgs()
+            val stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)
+            setParameters(stmt, args)
+            stmt.executeUpdate()
 
-                val generatedId = stmt.generatedKeys.getInt(1)
+            val generatedId = stmt.generatedKeys.getInt(1)
 
-                if (generatedId == 0) {
-                    Result.failure<Unit>(Exception("Failed to insert record: [${sql}] [$args]"))
-                }
-
-                generatedId
+            if (generatedId == 0) {
+                Result.failure<Unit>(Exception("Failed to insert record: [${sql}] [$args]"))
             }
-            .onFailure {
-                Result.failure<Int>(Exception("Failed to execute insert operation: [$it]"))
-            }
-    }
+
+            generatedId
+        }
+        .onFailure { Result.failure<Int>(Exception("Failed to execute insert operation: [$it]")) }
 }

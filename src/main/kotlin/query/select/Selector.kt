@@ -6,31 +6,23 @@ import query.mapper.Rows
 import query.mapper.setParameters
 import query.table.Column
 import query.table.Table
+import query.where.Where
+import query.where.WhereArgs
 
-class Selecter(private val table: Table) {
+class Selector(private val table: Table) {
     private val selectColumns = mutableListOf<Column<*>>()
     private var whereClauses: WhereArgs? = null
     private var args = mutableListOf<Any>()
     private val joins = mutableListOf<Join>()
 
-    fun select(vararg columns: Column<*>): Selecter {
+    fun select(vararg columns: Column<*>): Selector {
         columns.takeIf { it.isNotEmpty() }?.let { selectColumns.addAll(columns) }
             ?: selectColumns.addAll(table.columns())
 
         return this
     }
 
-    fun select(columns: Collection<Column<*>>): Selecter {
-        selectColumns.addAll(columns)
-
-        return this
-    }
-
-    operator fun <T : Any> Column<T>.unaryPlus() {
-        selectColumns.add(this)
-    }
-
-    fun where(init: Where.() -> Unit): Selecter {
+    fun where(init: Where.() -> Unit): Selector {
         val where = Where()
         init(where)
 
@@ -39,7 +31,7 @@ class Selecter(private val table: Table) {
         return this
     }
 
-    fun join(table: Table, joinType: JoinType = JoinType.INNER, init: Join.() -> Unit): Selecter {
+    fun join(table: Table, joinType: JoinType = JoinType.INNER, init: Join.() -> Unit): Selector {
         val join = Join(this.table, table, joinType)
         init(join)
         joins.add(join)
@@ -72,38 +64,38 @@ class Selecter(private val table: Table) {
 
         return Pair(sql.toString(), args)
     }
+}
 
-    fun <R> getOne(conn: Connection, mapper: (Row) -> R): Result<R> {
-        return runCatching {
-            val (sql, args) = sqlArgs()
-            val stmt = conn.prepareStatement(sql)
-            setParameters(stmt, args)
+fun <R> Selector.get(conn: Connection, mapper: (Row) -> R): Result<R> {
+    return runCatching {
+        val (sql, args) = sqlArgs()
+        val stmt = conn.prepareStatement(sql)
+        setParameters(stmt, args)
 
-            val rs = stmt.executeQuery()
-            if (!rs.next()) {
-                Result.failure<Unit>(NoSuchElementException("No rows found"))
-            }
-            val row = Row(rs)
-            mapper(row)
+        val rs = stmt.executeQuery()
+        if (!rs.next()) {
+            Result.failure<Unit>(NoSuchElementException("No rows found"))
         }
+        val row = Row(rs)
+        mapper(row)
     }
+}
 
-    fun <R> getList(conn: Connection, mapper: (Row) -> R): Result<List<R>> {
-        return runCatching {
-            val (sql, args) = sqlArgs()
-            val stmt = conn.prepareStatement(sql)
-            setParameters(stmt, args)
+fun <R> Selector.list(conn: Connection, mapper: (Row) -> R): Result<List<R>> {
+    return runCatching {
+        val (sql, args) = sqlArgs()
+        val stmt = conn.prepareStatement(sql)
+        setParameters(stmt, args)
 
-            val rs = stmt.executeQuery()
-            val rows = Rows(rs).iterator()
+        val rs = stmt.executeQuery()
+        val rows = Rows(rs).iterator()
 
-            val resultList = mutableListOf<R>()
-            while (rows.hasNext()) {
-                val row = rows.next()
-                resultList.add(mapper(row))
-            }
-
-            resultList
+        val resultList = mutableListOf<R>()
+        while (rows.hasNext()) {
+            val row = rows.next()
+            resultList.add(mapper(row))
         }
+
+        resultList
     }
 }
