@@ -31,18 +31,18 @@ class Rows(private val resultSet: ResultSet) : Iterable<Row> {
     override fun iterator(): Iterator<Row> = resultSet.iterator()
 }
 
-@Suppress("IteratorHasNextCallsNextMethod")
-fun ResultSet.iterator(): Iterator<Row> = object : Iterator<Row> {
-    var isHasNext: Boolean? = null
+fun ResultSet.iterator(): Iterator<Row> =
+    object : Iterator<Row> {
+        var isHasNext: Boolean? = null
 
-    override fun hasNext() = isHasNext ?: this@iterator.next().also { isHasNext = it }
+        override fun hasNext() = isHasNext ?: this@iterator.next().also { isHasNext = it }
 
-    override fun next(): Row {
-        val isHasNext = isHasNext?.also { isHasNext = null } ?: this@iterator.next()
-        if (!isHasNext) throw NoSuchElementException("No more rows in ResultSet.")
-        return Row(this@iterator)
+        override fun next(): Row {
+            val isHasNext = isHasNext?.also { isHasNext = null } ?: this@iterator.next()
+            if (!isHasNext) throw NoSuchElementException("No more rows in ResultSet.")
+            return Row(this@iterator)
+        }
     }
-}
 
 internal fun setParameters(stmt: PreparedStatement, params: List<Any?>) {
     params.forEachIndexed { index, param ->

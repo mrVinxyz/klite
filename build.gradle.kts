@@ -15,6 +15,11 @@ ktfmt {
     kotlinLangStyle()
 }
 
+detekt {
+    config.setFrom("detekt.yml")
+    buildUponDefaultConfig = true
+}
+
 dependencies {
     testImplementation(kotlin("test"))
     testImplementation("org.xerial:sqlite-jdbc:3.46.0.1")
