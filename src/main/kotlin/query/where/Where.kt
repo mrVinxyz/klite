@@ -1,4 +1,4 @@
-package query.select
+package query.where
 
 import query.table.Column
 
