@@ -14,21 +14,11 @@ enum class JoinType {
 class Join(
     private val mainTable: Table,
     private val joinTable: Table,
+    private val leftColumn: Column<*>,
+    private val rightColumn: Column<*>,
     private var joinType: JoinType,
 ) {
-    private lateinit var leftColumn: Column<*>
-    private lateinit var rightColumn: Column<*>
     private var joinClause = StringBuilder()
-
-    infix fun <T : Any> Column<T>.on(other: Column<*>) {
-        if (this.getTable() == mainTable && other.getTable() == joinTable) {
-            leftColumn = this
-            rightColumn = other
-        } else if (this.getTable() == joinTable && other.getTable() == mainTable) {
-            leftColumn = other
-            rightColumn = this
-        }
-    }
 
     fun joinClauses(): String {
         when (joinType) {

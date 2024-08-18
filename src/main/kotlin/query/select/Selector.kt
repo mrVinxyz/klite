@@ -31,9 +31,13 @@ class Selector(private val table: Table) {
         return this
     }
 
-    fun join(table: Table, joinType: JoinType = JoinType.INNER, init: Join.() -> Unit): Selector {
-        val join = Join(this.table, table, joinType)
-        init(join)
+    fun join(
+        table: Table,
+        leftColumn: Column<*>,
+        rightColumn: Column<*>,
+        joinType: JoinType = JoinType.INNER
+    ): Selector {
+        val join = Join(this.table, table, leftColumn, rightColumn, joinType)
         joins.add(join)
         return this
     }
