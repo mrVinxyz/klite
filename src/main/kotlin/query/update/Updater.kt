@@ -7,18 +7,16 @@ import query.where.WhereArgs
 
 class Updater(private val table: Table) {
     private val updateColumns = mutableListOf<Column<*>>()
-    private val argsValues = mutableListOf<Any>()
+    private val argsValues = mutableListOf<Any?>()
     private var condition: WhereArgs? = null
 
     fun update(init: (Updater) -> Unit): Updater {
         return Updater(table).apply(init)
     }
 
-    operator fun <T> set(column: Column<*>, value: T?): Updater {
-        value?.let { v ->
-            updateColumns.add(column)
-            argsValues.add(v)
-        }
+    operator fun <T : Any> set(column: Column<*>, value: T?): Updater {
+        updateColumns.add(column)
+        argsValues.add(value)
 
         return this
     }
@@ -32,7 +30,7 @@ class Updater(private val table: Table) {
         return this
     }
 
-    fun sqlArgs(): Pair<String, List<Any>> {
+    fun sqlArgs(): Pair<String, List<Any?>> {
         val sql = StringBuilder()
 
         sql.append("UPDATE ")
@@ -40,8 +38,16 @@ class Updater(private val table: Table) {
         sql.append(" SET ")
 
         updateColumns.forEachIndexed { index, column ->
-            sql.append(column.key())
-            sql.append(" = ?")
+            if (argsValues[index] == null) {
+                sql.append(column.key())
+                sql.append(" = COALESCE(?, ")
+                sql.append(column.key())
+                sql.append(")")
+            } else {
+                sql.append(column.key())
+                sql.append(" = ?")
+            }
+
             if (index < updateColumns.size - 1) sql.append(", ")
         }
 

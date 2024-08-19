@@ -48,5 +48,9 @@ class Where {
         args.add("%$value%")
     }
 
+    fun <T : Any> fn(column: Column<T>, fnName: String): Column<T> {
+        return Column("${fnName}(${column.key()})", column.type())
+    }
+
     fun clausesArgs(): WhereArgs = Pair(clauses.toString(), args)
 }

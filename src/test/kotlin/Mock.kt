@@ -1,12 +1,18 @@
+import java.io.File
 import java.sql.Connection
 import java.sql.DriverManager
 import query.table.Table
 
+// TODO use a pool so that we're able to use a in-memory database
 class Database {
-    private var conn: Connection = DriverManager.getConnection("jdbc:sqlite::memory:")
+    private var conn: Connection = DriverManager.getConnection("jdbc:sqlite:database.db")
 
     fun conn(): Connection {
         return conn
+    }
+
+    fun cleanUp() {
+        File("database.db").delete()
     }
 }
 
@@ -41,8 +47,7 @@ fun createUserTable(conn: Connection) {
                         created_at INTEGER
                     )
                     """
-                .trimIndent()
-        )
+                .trimIndent())
     }
 }
 
@@ -54,8 +59,8 @@ fun feedUserTable(conn: Connection) {
                 (1, 'John Doe', 'john.doe@example.com', 'password1', 'active', CURRENT_TIMESTAMP),
                 (2, 'Jane Smith', 'jane.smith@example.com', 'password2', 'active', CURRENT_TIMESTAMP),
                 (3, 'Alice Johnson', 'alice.johnson@example.com', 'password3', 'active', CURRENT_TIMESTAMP),
-                (4, 'Bob Brown', 'bob.brown@example.com', 'password4', 'active', CURRENT_TIMESTAMP),
+                (4, 'Bob Brown', 'bob.brown@example.com', 'password4', 'active', CURRENT_TIMESTAMP)
             """
-        )
+                .trimIndent())
     }
 }
