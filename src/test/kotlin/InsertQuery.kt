@@ -153,9 +153,9 @@ class InsertQuery {
 
     @Test
     fun `test insert persist method`() {
-        val mock = Database()
+        val db = Database()
 
-        val query =
+        val insertQuery =
             Inserter(Users).insert {
                 it[Users.id] = user.id
                 it[Users.name] = user.name
@@ -165,10 +165,10 @@ class InsertQuery {
                 it[Users.createdAt] = user.createdAt
             }
 
-        mock.conn().use {
+        db.conn().use {
             createUserTable(it)
 
-            val result = query.persist(it)
+            val result = insertQuery.persist(it)
 
             assert(result.isSuccess)
             result.onSuccess { id -> assertEquals(1, id) }
