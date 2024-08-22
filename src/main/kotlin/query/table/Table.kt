@@ -1,5 +1,8 @@
 package query.table
 
+import query.insert.Inserter
+import query.select.Selector
+import query.update.Updater
 import java.math.BigDecimal
 
 abstract class Table(private val name: String) {
@@ -25,14 +28,26 @@ abstract class Table(private val name: String) {
         return column
     }
 
+    fun name(): String = name
+
     protected fun <T : Any> Column<T>.setPrimaryKey(): Column<T> {
         primaryKey = this
         return this
     }
 
-    fun name(): String = name
-
     fun primaryKey(): Column<*>? = primaryKey
 
     fun columns(): List<Column<*>> = columns
+
+    fun insert(init: Inserter.() -> Unit): Inserter {
+        return Inserter(this).apply(init)
+    }
+
+    fun select(init: Selector.() -> Unit): Selector {
+        return Selector(this).apply(init)
+    }
+
+    fun update(init: Updater.() -> Unit): Updater {
+        return Updater(this).apply(init)
+    }
 }
