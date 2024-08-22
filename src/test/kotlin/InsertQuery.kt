@@ -171,7 +171,9 @@ class InsertQuery {
             val result = insertQuery.persist(it)
 
             assert(result.isSuccess)
-            result.onSuccess { id -> assertEquals(1, id) }
+            result.onSuccess { id -> assertEquals(mapOf<String, Int>("user_id" to 1), id) }
         }
+
+        db.cleanUp()
     }
 }

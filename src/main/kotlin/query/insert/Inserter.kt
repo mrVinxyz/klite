@@ -6,7 +6,7 @@ import query.mapper.setParameters
 import query.table.Column
 import query.table.Table
 
-class Inserter(private val table: Table) {
+class Inserter(val table: Table) {
     private val insertColumns = mutableListOf<Column<*>>()
     private val argsValues = mutableListOf<Any>()
 
@@ -69,20 +69,23 @@ class Inserter(private val table: Table) {
     }
 }
 
-fun Inserter.persist(conn: Connection): Result<Int> {
+typealias InsertResult = Result<Map<String, Int>>
+
+fun Inserter.persist(conn: Connection): InsertResult {
     return runCatching {
             val (sql, args) = sqlArgs()
             val stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)
             setParameters(stmt, args)
             stmt.executeUpdate()
 
+            val idName = this.table.primaryKey()?.key() ?: "id"
             val generatedId = stmt.generatedKeys.getInt(1)
 
             if (generatedId == 0) {
                 Result.failure<Unit>(Exception("Failed to insert record: [${sql}] [$args]"))
             }
 
-            generatedId
+            mapOf(idName to generatedId)
         }
         .onFailure { Result.failure<Int>(Exception("Failed to execute insert operation: [$it]")) }
 }
