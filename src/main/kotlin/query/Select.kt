@@ -52,12 +52,13 @@ class Selector(private val table: Table) {
             sql.append(it.joinClauses())
         }
 
-        whereClauses?.first?.let {
-            sql.append(" WHERE ")
-            sql.append(it)
+        whereClauses?.let { cond ->
+            cond.first.takeIf { it.isNotEmpty() }?.let {
+                sql.append(" WHERE ")
+                sql.append(it)
+                args.addAll(cond.second)
+            }
         }
-
-        whereClauses?.second?.let { args.addAll(it) }
 
         return Pair(sql.toString(), args)
     }
