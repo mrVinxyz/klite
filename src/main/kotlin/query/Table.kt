@@ -32,19 +32,10 @@ abstract class Table(private val name: String) {
         return this
     }
 
-    fun primaryKey(): Column<*>? = primaryKey
+    fun <T: Any> primaryKey(): Column<T>? {
+        @Suppress("UNCHECKED_CAST")
+        return primaryKey as Column<T>?
+    }
 
     fun columns(): List<Column<*>> = columns
-
-    fun insert(init: Inserter.() -> Unit): Inserter {
-        return Inserter(this).apply(init)
-    }
-
-    fun select(init: Selector.() -> Unit): Selector {
-        return Selector(this).apply(init)
-    }
-
-    fun update(init: Update.() -> Unit): Update {
-        return Update(this).apply(init)
-    }
 }
