@@ -22,7 +22,7 @@ class InsertQuery {
                 .sqlArgs()
 
         assertEquals(
-            "INSERT INTO user (id, name, email, password, record_status, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            "INSERT INTO user (user_id, name, email, password, record_status, created_at) VALUES (?, ?, ?, ?, ?, ?)",
             sql)
 
         assertEquals(
@@ -52,7 +52,7 @@ class InsertQuery {
                 .sqlArgs()
 
         assertEquals(
-            "INSERT INTO user (id, name, email, password, record_status, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            "INSERT INTO user (user_id, name, email, password, record_status, created_at) VALUES (?, ?, ?, ?, ?, ?)",
             sql)
 
         assertEquals(
@@ -68,13 +68,13 @@ class InsertQuery {
                 .insert(Users.id, Users.name, Users.email, Users.password)
                 .values(
                     mapOf(
-                        "id" to user.id,
+                        "user_id" to user.id,
                         "name" to user.name,
                         "email" to user.email,
                         "password" to user.password))
                 .sqlArgs()
 
-        assertEquals("INSERT INTO user (id, name, email, password) VALUES (?, ?, ?, ?)", sql)
+        assertEquals("INSERT INTO user (user_id, name, email, password) VALUES (?, ?, ?, ?)", sql)
 
         assertEquals(listOf(user.id, user.name, user.email, user.password), args)
     }
@@ -93,7 +93,7 @@ class InsertQuery {
                 }
                 .sqlArgs()
 
-        assertEquals("INSERT INTO user (id, name, email, password) VALUES (?, ?, ?, ?)", sql)
+        assertEquals("INSERT INTO user (user_id, name, email, password) VALUES (?, ?, ?, ?)", sql)
 
         assertEquals(listOf(userNull.id, userNull.name, userNull.email, userNull.password), args)
     }
@@ -118,7 +118,7 @@ class InsertQuery {
                     userNull.createdAt)
                 .sqlArgs()
 
-        assertEquals("INSERT INTO user (id, name, email, password) VALUES (?, ?, ?, ?)", sql)
+        assertEquals("INSERT INTO user (user_id, name, email, password) VALUES (?, ?, ?, ?)", sql)
 
         assertEquals(listOf(userNull.id, userNull.name, userNull.email, userNull.password), args)
     }
@@ -130,7 +130,7 @@ class InsertQuery {
                 .insert(Users.id, Users.name, Users.email, Users.password)
                 .values(
                     mapOf(
-                        "id" to userNull.id,
+                        "user_id" to userNull.id,
                         "name" to userNull.name,
                         "email" to userNull.email,
                         "password" to userNull.password,
@@ -138,13 +138,13 @@ class InsertQuery {
                         "created_at" to userNull.createdAt))
                 .sqlArgs()
 
-        assertEquals("INSERT INTO user (id, name, email, password) VALUES (?, ?, ?, ?)", sql)
+        assertEquals("INSERT INTO user (user_id, name, email, password) VALUES (?, ?, ?, ?)", sql)
 
         assertEquals(listOf(userNull.id, userNull.name, userNull.email, userNull.password), args)
     }
 
     @Test
-    fun `test sqlArgs with empty inserter`() {
+    fun `test insert empty`() {
         val (sql, args) = Inserter(Users).sqlArgs()
 
         assertEquals("INSERT INTO user () VALUES ()", sql)
