@@ -75,7 +75,7 @@ fun Inserter.persist(conn: Connection): InsertResult {
             setParameters(stmt, args)
             stmt.executeUpdate()
 
-            val idName = this.table.primaryKey()?.key() ?: "id"
+            val idName = this.table.primaryKey<Any>()?.key() ?: "id"
             val generatedId = stmt.generatedKeys.getInt(1)
 
             if (generatedId == 0) {
