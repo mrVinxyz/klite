@@ -84,5 +84,5 @@ fun Inserter.persist(conn: Connection): InsertResult {
 
             mapOf(idName to generatedId)
         }
-        .onFailure { Result.failure<Int>(Exception("Failed to execute insert operation: [$it]")) }
+        .onFailure { Result.failure<Unit>(Exception("Failed to execute insert operation: [$it]")) }
 }
