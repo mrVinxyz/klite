@@ -60,6 +60,10 @@ class Updater(private val table: Table) {
     }
 }
 
+fun Table.update(init: (Updater) -> Unit): Updater {
+    return Updater(this).apply(init)
+}
+
 typealias UpdateResult = Result<Unit>
 
 fun Updater.persist(conn: Connection): UpdateResult {

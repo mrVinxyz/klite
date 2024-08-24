@@ -64,6 +64,10 @@ class Selector(private val table: Table) {
     }
 }
 
+fun Table.select(vararg columns: Column<*>): Selector {
+    return Selector(this).select(*columns)
+}
+
 fun <R> Selector.get(conn: Connection, mapper: (Row) -> R): Result<R> {
     return runCatching {
         val (sql, args) = sqlArgs()

@@ -66,6 +66,10 @@ class Inserter(val table: Table) {
     }
 }
 
+fun Table.insert(init: Inserter.() -> Unit): Inserter {
+    return Inserter(this).apply(init)
+}
+
 typealias InsertResult = Result<Map<String, Int>>
 
 fun Inserter.persist(conn: Connection): InsertResult {
