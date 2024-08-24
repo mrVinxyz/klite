@@ -1,22 +1,24 @@
 package query
 
-class Update(private val table: Table) {
+import java.sql.Connection
+
+class Updater(private val table: Table) {
     private val updateColumns = mutableListOf<Column<*>>()
     private val argsValues = mutableListOf<Any?>()
     private var condition: WhereArgs? = null
 
-    fun update(init: (Update) -> Unit): Update {
-        return Update(table).apply(init)
+    fun update(init: (Updater) -> Unit): Updater {
+        return Updater(table).apply(init)
     }
 
-    operator fun <T : Any> set(column: Column<*>, value: T?): Update {
+    operator fun <T : Any> set(column: Column<*>, value: T?): Updater {
         updateColumns.add(column)
         argsValues.add(value)
 
         return this
     }
 
-    fun where(init: Where.() -> Unit): Update {
+    fun where(init: Where.() -> Unit): Updater {
         val where = Where()
         init(where)
 
@@ -54,4 +56,19 @@ class Update(private val table: Table) {
 
         return Pair(sql.toString(), argsValues)
     }
+}
+
+typealias UpdateResult = Result<Unit>
+
+fun Updater.persist(conn: Connection): UpdateResult {
+    return runCatching {
+            val (sql, args) = sqlArgs()
+            conn.prepareStatement(sql).use { stmt ->
+                setParameters(stmt, args)
+                stmt.executeUpdate()
+            }
+
+            Unit
+        }
+        .onFailure { Result.failure<Unit>(Exception("Failed to execute update operation: [$it]")) }
 }
