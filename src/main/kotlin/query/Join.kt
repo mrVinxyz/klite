@@ -1,7 +1,4 @@
-package query.select
-
-import query.table.Column
-import query.table.Table
+package query
 
 enum class JoinType {
     INNER,

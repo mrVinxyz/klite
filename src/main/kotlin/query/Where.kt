@@ -1,6 +1,4 @@
-package query.where
-
-import query.table.Column
+package query
 
 typealias WhereArgs = Pair<String, List<Any>>
 

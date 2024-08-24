@@ -1,10 +1,10 @@
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import query.select.JoinType
-import query.select.Selector
-import query.select.get
-import query.select.list
+import query.JoinType
+import query.Selector
+import query.get
+import query.list
 
 class SelectQuery {
     @Test

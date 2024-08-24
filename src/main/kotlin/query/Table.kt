@@ -1,8 +1,5 @@
-package query.table
+package query
 
-import query.insert.Inserter
-import query.select.Selector
-import query.update.Updater
 import java.math.BigDecimal
 
 abstract class Table(private val name: String) {
@@ -47,7 +44,7 @@ abstract class Table(private val name: String) {
         return Selector(this).apply(init)
     }
 
-    fun update(init: Updater.() -> Unit): Updater {
-        return Updater(this).apply(init)
+    fun update(init: Update.() -> Unit): Update {
+        return Update(this).apply(init)
     }
 }

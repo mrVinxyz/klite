@@ -1,6 +1,6 @@
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import query.update.Updater
+import query.Update
 
 class UpdateQuery {
     private val user = User(1, "John Doe", "johndoe@email.com", "johndoe123", "active", 1234567890)
@@ -9,7 +9,7 @@ class UpdateQuery {
     @Test
     fun `test update with init block`() {
         val (sql, args) =
-            Updater(Users)
+            Update(Users)
                 .update {
                     it[Users.name] = user.name
                     it[Users.email] = user.email
@@ -33,7 +33,7 @@ class UpdateQuery {
     @Test
     fun `test update with null values`() {
         val (sql, args) =
-            Updater(Users)
+            Update(Users)
                 .update {
                     it[Users.name] = userNull.name
                     it[Users.recordStatus] = userNull.recordStatus

@@ -1,10 +1,8 @@
-package query.mapper
+package query
 
 import java.math.BigDecimal
 import java.sql.PreparedStatement
 import java.sql.ResultSet
-import query.table.Column
-import query.table.ColumnType
 
 class Row(private val resultSet: ResultSet) {
     @Suppress("UNCHECKED_CAST")

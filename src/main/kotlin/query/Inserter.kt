@@ -1,10 +1,7 @@
-package query.insert
+package query
 
 import java.sql.Connection
 import java.sql.Statement
-import query.mapper.setParameters
-import query.table.Column
-import query.table.Table
 
 class Inserter(val table: Table) {
     private val insertColumns = mutableListOf<Column<*>>()

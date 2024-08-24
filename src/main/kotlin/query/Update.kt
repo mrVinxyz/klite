@@ -1,27 +1,22 @@
-package query.update
+package query
 
-import query.table.Column
-import query.table.Table
-import query.where.Where
-import query.where.WhereArgs
-
-class Updater(private val table: Table) {
+class Update(private val table: Table) {
     private val updateColumns = mutableListOf<Column<*>>()
     private val argsValues = mutableListOf<Any?>()
     private var condition: WhereArgs? = null
 
-    fun update(init: (Updater) -> Unit): Updater {
-        return Updater(table).apply(init)
+    fun update(init: (Update) -> Unit): Update {
+        return Update(table).apply(init)
     }
 
-    operator fun <T : Any> set(column: Column<*>, value: T?): Updater {
+    operator fun <T : Any> set(column: Column<*>, value: T?): Update {
         updateColumns.add(column)
         argsValues.add(value)
 
         return this
     }
 
-    fun where(init: Where.() -> Unit): Updater {
+    fun where(init: Where.() -> Unit): Update {
         val where = Where()
         init(where)
 

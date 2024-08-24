@@ -1,13 +1,6 @@
-package query.select
+package query
 
 import java.sql.Connection
-import query.mapper.Row
-import query.mapper.Rows
-import query.mapper.setParameters
-import query.table.Column
-import query.table.Table
-import query.where.Where
-import query.where.WhereArgs
 
 class Selector(private val table: Table) {
     private val selectColumns = mutableListOf<Column<*>>()

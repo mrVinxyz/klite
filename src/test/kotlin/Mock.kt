@@ -1,7 +1,7 @@
 import java.io.File
 import java.sql.Connection
 import java.sql.DriverManager
-import query.table.Table
+import query.Table
 
 // TODO use a pool so that we're able to use a in-memory database
 class Database {

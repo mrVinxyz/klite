@@ -1,7 +1,7 @@
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import query.insert.Inserter
-import query.insert.persist
+import query.Inserter
+import query.persist
 
 class InsertQuery {
     private val user = User(1, "John Doe", "johndoe@email.com", "johndoe123", "active", 1234567890)
