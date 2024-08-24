@@ -1,13 +1,6 @@
-package query.select
+package query
 
 import java.sql.Connection
-import query.mapper.Row
-import query.mapper.Rows
-import query.mapper.setParameters
-import query.table.Column
-import query.table.Table
-import query.where.Where
-import query.where.WhereArgs
 
 class Selector(private val table: Table) {
     private val selectColumns = mutableListOf<Column<*>>()
@@ -59,15 +52,20 @@ class Selector(private val table: Table) {
             sql.append(it.joinClauses())
         }
 
-        whereClauses?.first?.let {
-            sql.append(" WHERE ")
-            sql.append(it)
+        whereClauses?.let { cond ->
+            cond.first.takeIf { it.isNotEmpty() }?.let {
+                sql.append(" WHERE ")
+                sql.append(it)
+                args.addAll(cond.second)
+            }
         }
-
-        whereClauses?.second?.let { args.addAll(it) }
 
         return Pair(sql.toString(), args)
     }
+}
+
+fun Table.select(vararg columns: Column<*>): Selector {
+    return Selector(this).select(*columns)
 }
 
 fun <R> Selector.get(conn: Connection, mapper: (Row) -> R): Result<R> {

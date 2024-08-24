@@ -1,9 +1,6 @@
-package query.update
+package query
 
-import query.table.Column
-import query.table.Table
-import query.where.Where
-import query.where.WhereArgs
+import java.sql.Connection
 
 class Updater(private val table: Table) {
     private val updateColumns = mutableListOf<Column<*>>()
@@ -51,12 +48,33 @@ class Updater(private val table: Table) {
             if (index < updateColumns.size - 1) sql.append(", ")
         }
 
-        condition?.let {
-            sql.append(" WHERE ")
-            sql.append(it.first)
-            argsValues.addAll(it.second)
+        condition?.let { cond ->
+            cond.first.takeIf { it.isNotEmpty() }?.let {
+                sql.append(" WHERE ")
+                sql.append(it)
+                argsValues.addAll(cond.second)
+            }
         }
 
         return Pair(sql.toString(), argsValues)
     }
+}
+
+fun Table.update(init: (Updater) -> Unit): Updater {
+    return Updater(this).apply(init)
+}
+
+typealias UpdateResult = Result<Unit>
+
+fun Updater.persist(conn: Connection): UpdateResult {
+    return runCatching {
+            val (sql, args) = sqlArgs()
+            conn.prepareStatement(sql).use { stmt ->
+                setParameters(stmt, args)
+                stmt.executeUpdate()
+            }
+
+            Unit
+        }
+        .onFailure { Result.failure<Unit>(Exception("Failed to execute update operation: [$it]")) }
 }

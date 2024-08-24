@@ -1,7 +1,7 @@
 import java.io.File
 import java.sql.Connection
 import java.sql.DriverManager
-import query.table.Table
+import query.Table
 
 // TODO use a pool so that we're able to use a in-memory database
 class Database {
@@ -17,7 +17,7 @@ class Database {
 }
 
 object Users : Table("user") {
-    val id = column<Int>("id").setPrimaryKey()
+    val id = column<Int>("user_id").setPrimaryKey()
     val name = column<String>("name")
     val email = column<String>("email")
     val password = column<String>("password")
@@ -39,7 +39,7 @@ fun createUserTable(conn: Connection) {
         stmt.execute(
             """
                     CREATE TABLE user (
-                        id INTEGER PRIMARY KEY,
+                        user_id INTEGER PRIMARY KEY,
                         name TEXT,
                         email TEXT,
                         password TEXT,
@@ -55,7 +55,7 @@ fun feedUserTable(conn: Connection) {
     conn.createStatement().use { stmt ->
         stmt.execute(
             """
-                INSERT INTO user (id, name, email, password, record_status, created_at) VALUES
+                INSERT INTO user (user_id, name, email, password, record_status, created_at) VALUES
                 (1, 'John Doe', 'john.doe@example.com', 'password1', 'active', CURRENT_TIMESTAMP),
                 (2, 'Jane Smith', 'jane.smith@example.com', 'password2', 'active', CURRENT_TIMESTAMP),
                 (3, 'Alice Johnson', 'alice.johnson@example.com', 'password3', 'active', CURRENT_TIMESTAMP),

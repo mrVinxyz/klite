@@ -1,4 +1,4 @@
-package query.table
+package query
 
 import java.math.BigDecimal
 
@@ -25,14 +25,17 @@ abstract class Table(private val name: String) {
         return column
     }
 
+    fun name(): String = name
+
     protected fun <T : Any> Column<T>.setPrimaryKey(): Column<T> {
         primaryKey = this
         return this
     }
 
-    fun name(): String = name
-
-    fun primaryKey(): Column<*>? = primaryKey
+    fun <T: Any> primaryKey(): Column<T>? {
+        @Suppress("UNCHECKED_CAST")
+        return primaryKey as Column<T>?
+    }
 
     fun columns(): List<Column<*>> = columns
 }

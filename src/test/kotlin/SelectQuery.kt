@@ -1,10 +1,10 @@
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import query.select.JoinType
-import query.select.Selector
-import query.select.get
-import query.select.list
+import query.JoinType
+import query.Selector
+import query.get
+import query.list
 
 class SelectQuery {
     @Test
@@ -12,14 +12,15 @@ class SelectQuery {
         val (sql, _) =
             Selector(Users).select(Users.id, Users.name, Users.email, Users.password).sqlArgs()
 
-        assertEquals("SELECT id, name, email, password FROM user", sql)
+        assertEquals("SELECT user_id, name, email, password FROM user", sql)
     }
 
     @Test
     fun `test select all`() {
         val (sql, _) = Selector(Users).select().sqlArgs()
 
-        assertEquals("SELECT id, name, email, password, record_status, created_at FROM user", sql)
+        assertEquals(
+            "SELECT user_id, name, email, password, record_status, created_at FROM user", sql)
     }
 
     @Test
@@ -30,9 +31,22 @@ class SelectQuery {
                 .where { Users.id equal 1 }
                 .sqlArgs()
 
-        assertEquals("SELECT id, name, email, password FROM user WHERE id = ?", sql)
+        assertEquals("SELECT user_id, name, email, password FROM user WHERE user_id = ?", sql)
 
         assertEquals(listOf(1), args)
+    }
+
+    @Test
+    fun `test select with null where clause`() {
+        val (sql, args) =
+            Selector(Users)
+                .select(Users.id, Users.name, Users.email, Users.password)
+                .where { Users.id equal null }
+                .sqlArgs()
+
+        assertEquals("SELECT user_id, name, email, password FROM user", sql)
+
+        assertEquals(emptyList(), args)
     }
 
     @Test
@@ -46,7 +60,8 @@ class SelectQuery {
                 }
                 .sqlArgs()
 
-        assertEquals("SELECT id, name, email, password FROM user WHERE id = ? AND email = ?", sql)
+        assertEquals(
+            "SELECT user_id, name, email, password FROM user WHERE user_id = ? AND email = ?", sql)
 
         assertEquals(listOf(1, "john"), args)
     }
@@ -60,7 +75,8 @@ class SelectQuery {
                 .sqlArgs()
 
         assertEquals(
-            "SELECT id, name, email, password FROM user INNER JOIN user ON user.id = user.id", sql)
+            "SELECT user_id, name, email, password FROM user INNER JOIN user ON user.user_id = user.user_id",
+            sql)
     }
 
     @Test
@@ -73,8 +89,8 @@ class SelectQuery {
                 .sqlArgs()
 
         assertEquals(
-            "SELECT id, name, email, password FROM user " +
-                "INNER JOIN user ON user.id = user.id " +
+            "SELECT user_id, name, email, password FROM user " +
+                "INNER JOIN user ON user.id = user.user_id " +
                 "INNER JOIN user ON user.email = user.email",
             sql)
     }
@@ -91,8 +107,8 @@ class SelectQuery {
                 .sqlArgs()
 
         assertEquals(
-            "SELECT id, name, email, password FROM user " +
-                "LEFT JOIN user ON user.id = user.id " +
+            "SELECT user_id, name, email, password FROM user " +
+                "LEFT JOIN user ON user.user_id = user.user_id " +
                 "RIGHT JOIN user ON user.email = user.email " +
                 "OUTER JOIN user ON user.password = user.password " +
                 "FULL JOIN user ON user.record_status = user.record_status",
@@ -107,14 +123,13 @@ class SelectQuery {
                 .where { fn(Users.email, "LOWER") equal "john" }
                 .sqlArgs()
 
-        assertEquals("SELECT id, name, email, password FROM user WHERE LOWER(email) = ?", sql)
+        assertEquals("SELECT user_id, name, email, password FROM user WHERE LOWER(email) = ?", sql)
 
         assertEquals(listOf("john"), args)
     }
 
     @Test
     fun `test select executor get one`() {
-        val db = Database()
         val selectQuery =
             Selector(Users)
                 .select(
@@ -128,6 +143,7 @@ class SelectQuery {
 
         var user: User?
 
+        val db = Database()
         db.conn().use { conn ->
             createUserTable(conn)
             feedUserTable(conn)

@@ -1,4 +1,4 @@
-package query.table
+package query
 
 enum class ColumnType {
     STRING,
