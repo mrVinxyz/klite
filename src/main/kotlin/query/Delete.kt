@@ -29,11 +29,13 @@ class Deleter(private val table: Table) {
         sql.append(table.name())
 
         condition?.let { cond ->
-            cond.first.takeIf { it.isNotEmpty() }?.let {
-                sql.append(" WHERE ")
-                sql.append(it)
-                argsValues.addAll(cond.second)
-            }
+            cond.first
+                .takeIf { it.isNotEmpty() }
+                ?.let {
+                    sql.append(" WHERE ")
+                    sql.append(it)
+                    argsValues.addAll(cond.second)
+                }
         }
 
         return Pair(sql.toString(), argsValues)
@@ -52,13 +54,13 @@ typealias DeleteResult = Result<Unit>
 
 fun Deleter.persist(conn: Connection): DeleteResult {
     return runCatching {
-        val (sql, args) = sqlArgs()
-        conn.prepareStatement(sql).use { stmt ->
-            setParameters(stmt, args)
-            stmt.executeUpdate()
-        }
+            val (sql, args) = sqlArgs()
+            conn.prepareStatement(sql).use { stmt ->
+                setParameters(stmt, args)
+                stmt.executeUpdate()
+            }
 
-        Unit
-    }
+            Unit
+        }
         .onFailure { Result.failure<Unit>(Exception("Failed to execute delete operation: [$it]")) }
 }

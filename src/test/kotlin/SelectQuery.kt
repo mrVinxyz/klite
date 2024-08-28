@@ -6,7 +6,6 @@ import query.JoinType
 import query.Selector
 import query.get
 import query.list
-import sun.rmi.runtime.Log
 
 class SelectQuery {
     @Test
@@ -119,7 +118,8 @@ class SelectQuery {
                 .join(Users, Users.recordStatus, Users.recordStatus, JoinType.FULL)
                 .sqlArgs()
 
-        val rawSql = "SELECT user_id, name, email, password FROM user " +
+        val rawSql =
+            "SELECT user_id, name, email, password FROM user " +
                 "LEFT JOIN user ON user.user_id = user.user_id " +
                 "RIGHT JOIN user ON user.email = user.email " +
                 "OUTER JOIN user ON user.password = user.password " +
@@ -201,7 +201,8 @@ class SelectQuery {
                 .sqlArgs()
 
         Logger.info("[SQL] $sql [ARGS] $args")
-        assertEquals("SELECT user_id, name, email, password FROM user ORDER BY user_id ASC, name DESC", sql)
+        assertEquals(
+            "SELECT user_id, name, email, password FROM user ORDER BY user_id ASC, name DESC", sql)
         assertEquals(emptyList(), args)
     }
 

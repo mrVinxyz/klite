@@ -2,9 +2,9 @@ import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.ConsoleAppender
-import org.slf4j.LoggerFactory
 import kotlin.apply
 import kotlin.jvm.java
+import org.slf4j.LoggerFactory
 
 object Logger {
     private val logging = LoggerFactory.getLogger(Logger::class.java)

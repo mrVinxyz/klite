@@ -81,11 +81,13 @@ class Selector(private val table: Table) {
         }
 
         whereClauses?.let { cond ->
-            cond.first.takeIf { it.isNotEmpty() }?.let {
-                sql.append(" WHERE ")
-                sql.append(it)
-                argsValues.addAll(cond.second)
-            }
+            cond.first
+                .takeIf { it.isNotEmpty() }
+                ?.let {
+                    sql.append(" WHERE ")
+                    sql.append(it)
+                    argsValues.addAll(cond.second)
+                }
         }
 
         orderBy?.let {

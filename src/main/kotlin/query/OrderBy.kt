@@ -1,6 +1,6 @@
 package query
 
-enum class OrderType(name: String) {
+enum class OrderType(val value: String) {
     ASC("ASC"),
     DESC("DESC"),
 }

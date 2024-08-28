@@ -32,9 +32,8 @@ abstract class Table(private val name: String) {
         return this
     }
 
-    fun <T: Any> primaryKey(): Column<T>? {
-        @Suppress("UNCHECKED_CAST")
-        return primaryKey as Column<T>?
+    fun <T : Any> primaryKey(): Column<T>? {
+        @Suppress("UNCHECKED_CAST") return primaryKey as Column<T>?
     }
 
     fun columns(): List<Column<*>> = columns

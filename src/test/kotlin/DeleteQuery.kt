@@ -6,12 +6,7 @@ import query.persist
 class DeleteQuery {
     @Test
     fun `test delete where query`() {
-        val (sql, args) =
-            Deleter(Users)
-                .deleteWhere {
-                    Users.id equal 1
-                }
-                .sqlArgs()
+        val (sql, args) = Deleter(Users).deleteWhere { Users.id equal 1 }.sqlArgs()
 
         assertEquals("DELETE FROM user WHERE user_id = ?", sql)
         assertEquals(listOf(1), args)

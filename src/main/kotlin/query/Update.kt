@@ -49,11 +49,13 @@ class Updater(private val table: Table) {
         }
 
         condition?.let { cond ->
-            cond.first.takeIf { it.isNotEmpty() }?.let {
-                sql.append(" WHERE ")
-                sql.append(it)
-                argsValues.addAll(cond.second)
-            }
+            cond.first
+                .takeIf { it.isNotEmpty() }
+                ?.let {
+                    sql.append(" WHERE ")
+                    sql.append(it)
+                    argsValues.addAll(cond.second)
+                }
         }
 
         return Pair(sql.toString(), argsValues)

@@ -6,14 +6,11 @@ class Store {
     private var conn: Pool = Pool("jdbc:sqlite::memory:")
 
     fun conn(): Conn {
-        return conn.acquire() ?: throw Exception("No connection available")
+        return conn.acquire() ?: error("No connection available")
     }
 }
 
-class Pool(
-    uri: String,
-    poolSize: Int = 5
-) {
+class Pool(uri: String, poolSize: Int = 5) {
     private val connectionPool: ArrayBlockingQueue<Conn> = ArrayBlockingQueue(poolSize)
 
     init {
@@ -40,10 +37,7 @@ class Pool(
     }
 }
 
-class Conn(
-    private val connection: Connection,
-    private val pool: Pool
-) : Connection by connection {
+class Conn(private val connection: Connection, private val pool: Pool) : Connection by connection {
     override fun close() {
         pool.release(this)
     }
