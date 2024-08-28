@@ -139,7 +139,6 @@ class InsertQuery {
                 .sqlArgs()
 
         assertEquals("INSERT INTO user (user_id, name, email, password) VALUES (?, ?, ?, ?)", sql)
-
         assertEquals(listOf(userNull.id, userNull.name, userNull.email, userNull.password), args)
     }
 
@@ -153,7 +152,7 @@ class InsertQuery {
 
     @Test
     fun `test insert persist method`() {
-        val db = Database()
+        val db = Store()
 
         val insertQuery =
             Inserter(Users).insert {
@@ -173,7 +172,5 @@ class InsertQuery {
             assert(result.isSuccess)
             result.onSuccess { id -> assertEquals(mapOf<String, Int>("user_id" to 1), id) }
         }
-
-        db.cleanUp()
     }
 }

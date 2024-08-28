@@ -1,10 +1,12 @@
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import query.JoinType
 import query.Selector
 import query.get
 import query.list
+import sun.rmi.runtime.Log
 
 class SelectQuery {
     @Test
@@ -12,6 +14,7 @@ class SelectQuery {
         val (sql, _) =
             Selector(Users).select(Users.id, Users.name, Users.email, Users.password).sqlArgs()
 
+        Logger.info("[SQL] $sql")
         assertEquals("SELECT user_id, name, email, password FROM user", sql)
     }
 
@@ -19,8 +22,11 @@ class SelectQuery {
     fun `test select all`() {
         val (sql, _) = Selector(Users).select().sqlArgs()
 
+        Logger.info("[SQL] $sql")
         assertEquals(
-            "SELECT user_id, name, email, password, record_status, created_at FROM user", sql)
+            "SELECT user_id, name, email, password, record_status, created_at FROM user",
+            sql,
+        )
     }
 
     @Test
@@ -31,8 +37,8 @@ class SelectQuery {
                 .where { Users.id equal 1 }
                 .sqlArgs()
 
+        Logger.info("[SQL] $sql [ARGS] $args")
         assertEquals("SELECT user_id, name, email, password FROM user WHERE user_id = ?", sql)
-
         assertEquals(listOf(1), args)
     }
 
@@ -44,8 +50,8 @@ class SelectQuery {
                 .where { Users.id equal null }
                 .sqlArgs()
 
+        Logger.info("[SQL] $sql [ARGS] $args")
         assertEquals("SELECT user_id, name, email, password FROM user", sql)
-
         assertEquals(emptyList(), args)
     }
 
@@ -61,8 +67,11 @@ class SelectQuery {
                 .sqlArgs()
 
         assertEquals(
-            "SELECT user_id, name, email, password FROM user WHERE user_id = ? AND email = ?", sql)
+            "SELECT user_id, name, email, password FROM user WHERE user_id = ? AND email = ?",
+            sql,
+        )
 
+        Logger.info("[SQL] $sql [ARGS] $args")
         assertEquals(listOf(1, "john"), args)
     }
 
@@ -74,9 +83,11 @@ class SelectQuery {
                 .join(Users, Users.id, Users.id)
                 .sqlArgs()
 
+        Logger.info("[SQL] $sql")
         assertEquals(
             "SELECT user_id, name, email, password FROM user INNER JOIN user ON user.user_id = user.user_id",
-            sql)
+            sql,
+        )
     }
 
     @Test
@@ -88,11 +99,13 @@ class SelectQuery {
                 .join(Users, Users.email, Users.email)
                 .sqlArgs()
 
+        Logger.info("[SQL] $sql")
         assertEquals(
             "SELECT user_id, name, email, password FROM user " +
                 "INNER JOIN user ON user.id = user.user_id " +
                 "INNER JOIN user ON user.email = user.email",
-            sql)
+            sql,
+        )
     }
 
     @Test
@@ -106,13 +119,17 @@ class SelectQuery {
                 .join(Users, Users.recordStatus, Users.recordStatus, JoinType.FULL)
                 .sqlArgs()
 
-        assertEquals(
-            "SELECT user_id, name, email, password FROM user " +
+        val rawSql = "SELECT user_id, name, email, password FROM user " +
                 "LEFT JOIN user ON user.user_id = user.user_id " +
                 "RIGHT JOIN user ON user.email = user.email " +
                 "OUTER JOIN user ON user.password = user.password " +
-                "FULL JOIN user ON user.record_status = user.record_status",
-            sql)
+                "FULL JOIN user ON user.record_status = user.record_status"
+
+        Logger.info("[SQL] $sql")
+        assertEquals(
+            rawSql,
+            sql,
+        )
     }
 
     @Test
@@ -123,9 +140,69 @@ class SelectQuery {
                 .where { fn(Users.email, "LOWER") equal "john" }
                 .sqlArgs()
 
+        Logger.info("[SQL] $sql [ARGS] $args")
         assertEquals("SELECT user_id, name, email, password FROM user WHERE LOWER(email) = ?", sql)
-
         assertEquals(listOf("john"), args)
+    }
+
+    @Test
+    fun `test select with limitOffset`() {
+        val limitOffset = Pair(10, 5)
+        val (sql, args) =
+            Selector(Users)
+                .select(Users.id, Users.name, Users.email, Users.password)
+                .limit(limitOffset.first)
+                .offset(limitOffset.second)
+                .sqlArgs()
+
+        Logger.info("[SQL] $sql [ARGS] $args")
+        assertEquals("SELECT user_id, name, email, password FROM user LIMIT ? OFFSET ?", sql)
+        assertEquals(listOf(10, 5), args)
+    }
+
+    @Test
+    fun `test select with null pagination`() {
+        val (sql, args) =
+            Selector(Users)
+                .select(Users.id, Users.name, Users.email, Users.password)
+                .limit(null)
+                .offset(null)
+                .sqlArgs()
+
+        Logger.info("[SQL] $sql [ARGS] $args")
+        assertEquals("SELECT user_id, name, email, password FROM user", sql)
+        assertEquals(emptyList(), args)
+    }
+
+    @Test
+    fun `test select with pagination`() {
+        data class Pagination(val limit: Int? = 10, val offset: Int? = 5)
+        val pagination = Pagination()
+        val (sql, args) =
+            Selector(Users)
+                .select(Users.id, Users.name, Users.email, Users.password)
+                .pagination(pagination.limit, pagination.offset)
+                .sqlArgs()
+
+        Logger.info("[SQL] $sql [ARGS] $args")
+        assertEquals("SELECT user_id, name, email, password FROM user LIMIT ? OFFSET ?", sql)
+        assertEquals(listOf(pagination.limit!!, pagination.offset!!), args)
+    }
+
+    @Test
+    fun `test select with order by`() {
+        val (sql, args) =
+            Selector(Users)
+                .select(Users.id, Users.name, Users.email, Users.password)
+                .orderBy {
+                    Users.id.asc()
+                    Users.name.desc()
+                }
+                .sqlArgs()
+
+        Logger.info("[SQL] $sql [ARGS] $args")
+        assertEquals("SELECT user_id, name, email, password FROM user ORDER BY user_id ASC, name DESC", sql)
+        assertEquals(emptyList(), args)
     }
 
     @Test
@@ -138,12 +215,13 @@ class SelectQuery {
                     Users.email,
                     Users.password,
                     Users.createdAt,
-                    Users.recordStatus)
+                    Users.recordStatus,
+                )
                 .where { Users.id equal 1 }
 
         var user: User?
 
-        val db = Database()
+        val db = Store()
         db.conn().use { conn ->
             createUserTable(conn)
             feedUserTable(conn)
@@ -157,30 +235,20 @@ class SelectQuery {
                             it[Users.email],
                             it[Users.password],
                             it[Users.recordStatus],
-                            it[Users.createdAt])
+                            it[Users.createdAt],
+                        )
                     }
                     .getOrThrow()
         }
 
+        Logger.info("[GetExecutor] $user")
         assertNotNull(user)
         assertEquals(1, user.id)
-
-        db.cleanUp()
     }
 
     @Test
     fun `test select executor list`() {
-        val db = Database()
-        val selectQuery =
-            Selector(Users)
-                .select(
-                    Users.id,
-                    Users.name,
-                    Users.email,
-                    Users.password,
-                    Users.createdAt,
-                    Users.recordStatus)
-
+        val db = Store()
         var users: List<User>
 
         db.conn().use { conn ->
@@ -188,7 +256,15 @@ class SelectQuery {
             feedUserTable(conn)
 
             users =
-                selectQuery
+                Selector(Users)
+                    .select(
+                        Users.id,
+                        Users.name,
+                        Users.email,
+                        Users.password,
+                        Users.createdAt,
+                        Users.recordStatus,
+                    )
                     .list(conn) {
                         User(
                             it[Users.id],
@@ -196,13 +272,15 @@ class SelectQuery {
                             it[Users.email],
                             it[Users.password],
                             it[Users.recordStatus],
-                            it[Users.createdAt])
+                            it[Users.createdAt],
+                        )
                     }
                     .getOrThrow()
         }
 
-        assertEquals(4, users.size)
+        Logger.info("[ListExecutor] $users")
 
-        db.cleanUp()
+        assertNotEquals(0, users.size)
+        assertEquals(4, users.size)
     }
 }

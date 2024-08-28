@@ -29,7 +29,7 @@ class DeleteQuery {
     fun `test delete persist method`() {
         val deleteQuery = Deleter(Users).deletePrimary(1)
 
-        val db = Database()
+        val db = Store()
 
         db.conn().use {
             createUserTable(it)
@@ -46,7 +46,5 @@ class DeleteQuery {
                 assertEquals(0, rs.row)
             }
         }
-
-        db.cleanUp()
     }
 }

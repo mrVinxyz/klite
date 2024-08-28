@@ -84,7 +84,7 @@ class UpdateQuery {
                 }
                 .where { Users.id equal 1 }
 
-        val db = Database()
+        val db = Store()
         db.conn().use {
             createUserTable(it)
             feedUserTable(it)
@@ -102,7 +102,5 @@ class UpdateQuery {
                 assertEquals("Jhon Doe", updatedName)
             }
         }
-
-        db.cleanUp()
     }
 }

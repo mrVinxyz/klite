@@ -20,9 +20,13 @@ detekt {
     buildUponDefaultConfig = true
 }
 
+private val xerialJdbcVersion = "3.46.0.0"
+private val logbackVersion = "1.4.14"
+
 dependencies {
     testImplementation(kotlin("test"))
-    testImplementation("org.xerial:sqlite-jdbc:3.46.0.1")
+    testImplementation("org.xerial:sqlite-jdbc:$xerialJdbcVersion")
+    implementation("ch.qos.logback:logback-classic:$logbackVersion")
 }
 
 kotlin {
