@@ -4,9 +4,12 @@ import java.sql.Connection
 
 class Selector(private val table: Table) {
     private val selectColumns = mutableListOf<Column<*>>()
+    private var argsValues = mutableListOf<Any>()
     private var whereClauses: WhereArgs? = null
-    private var args = mutableListOf<Any>()
     private val joins = mutableListOf<Join>()
+    private var orderBy: OrderBy? = null
+    private var limit: Int? = null
+    private var offset: Int? = null
 
     fun select(vararg columns: Column<*>): Selector {
         columns.takeIf { it.isNotEmpty() }?.let { selectColumns.addAll(columns) }
@@ -35,6 +38,31 @@ class Selector(private val table: Table) {
         return this
     }
 
+    fun orderBy(init: OrderBy.() -> Unit): Selector {
+        val orderBy = OrderBy()
+        init(orderBy)
+
+        this.orderBy = orderBy
+
+        return this
+    }
+
+    fun limit(value: Int?): Selector {
+        value?.takeIf { it > 0 }?.let { limit = it }
+        return this
+    }
+
+    fun offset(value: Int?): Selector {
+        value?.takeIf { it > 0 }?.let { offset = it }
+        return this
+    }
+
+    fun pagination(limit: Int?, offset: Int?): Selector {
+        limit(limit)
+        offset(offset)
+        return this
+    }
+
     fun sqlArgs(): Pair<String, List<Any>> {
         val sql = StringBuilder()
 
@@ -49,18 +77,33 @@ class Selector(private val table: Table) {
 
         joins.forEach {
             sql.append(" ")
-            sql.append(it.joinClauses())
+            sql.append(it.toString())
         }
 
         whereClauses?.let { cond ->
             cond.first.takeIf { it.isNotEmpty() }?.let {
                 sql.append(" WHERE ")
                 sql.append(it)
-                args.addAll(cond.second)
+                argsValues.addAll(cond.second)
             }
         }
 
-        return Pair(sql.toString(), args)
+        orderBy?.let {
+            sql.append(" ORDER BY ")
+            sql.append(it.toString())
+        }
+
+        limit?.let {
+            sql.append(" LIMIT ?")
+            argsValues.add(it)
+        }
+
+        offset?.let {
+            sql.append(" OFFSET ?")
+            argsValues.add(it)
+        }
+
+        return Pair(sql.toString(), argsValues)
     }
 }
 
@@ -70,9 +113,9 @@ fun Table.select(vararg columns: Column<*>): Selector {
 
 fun <R> Selector.get(conn: Connection, mapper: (Row) -> R): Result<R> {
     return runCatching {
-        val (sql, args) = sqlArgs()
+        val (sql, argsValues) = sqlArgs()
         val stmt = conn.prepareStatement(sql)
-        setParameters(stmt, args)
+        setParameters(stmt, argsValues)
 
         val rs = stmt.executeQuery()
         if (!rs.next()) {
@@ -85,9 +128,9 @@ fun <R> Selector.get(conn: Connection, mapper: (Row) -> R): Result<R> {
 
 fun <R> Selector.list(conn: Connection, mapper: (Row) -> R): Result<List<R>> {
     return runCatching {
-        val (sql, args) = sqlArgs()
+        val (sql, argsValues) = sqlArgs()
         val stmt = conn.prepareStatement(sql)
-        setParameters(stmt, args)
+        setParameters(stmt, argsValues)
 
         val rs = stmt.executeQuery()
         val rows = Rows(rs).iterator()
