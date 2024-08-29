@@ -1,8 +1,8 @@
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 import query.Updater
 import query.persist
-import kotlin.test.assertNotEquals
 
 class UpdateQuery {
     private val user = User(1, "John Doe", "johndoe@email.com", "johndoe123", "active", 1234567890)
@@ -84,7 +84,7 @@ class UpdateQuery {
                 }
                 .where { Users.id equal 1 }
 
-        val db = Database()
+        val db = Store()
         db.conn().use {
             createUserTable(it)
             feedUserTable(it)
@@ -102,7 +102,5 @@ class UpdateQuery {
                 assertEquals("Jhon Doe", updatedName)
             }
         }
-
-        db.cleanUp()
     }
 }

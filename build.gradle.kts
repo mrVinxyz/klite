@@ -1,46 +1,22 @@
-plugins {
-    kotlin("jvm") version("2.0.0")
-    id("com.ncorti.ktfmt.gradle") version("0.19.0")
-    id("io.gitlab.arturbosch.detekt") version("1.23.3")
-}
+import org.gradle.kotlin.dsl.test
+
+plugins { kotlin("jvm") version ("2.0.0") }
 
 group = "mrvin.ktstd"
+
 version = "1.0-SNAPSHOT"
 
-repositories {
-    mavenCentral()
-}
+repositories { mavenCentral() }
 
-ktfmt {
-    kotlinLangStyle()
-}
-
-detekt {
-    config.setFrom("detekt.yml")
-    buildUponDefaultConfig = true
-}
+private val xerialJdbcVersion = "3.46.0.0"
+private val logbackVersion = "1.4.14"
 
 dependencies {
     testImplementation(kotlin("test"))
-    testImplementation("org.xerial:sqlite-jdbc:3.46.0.1")
+    testImplementation("org.xerial:sqlite-jdbc:$xerialJdbcVersion")
+    implementation("ch.qos.logback:logback-classic:$logbackVersion")
 }
 
-kotlin {
-    jvmToolchain(20)
-}
+kotlin { jvmToolchain(20) }
 
-tasks.test {
-    useJUnitPlatform()
-}
-
-tasks.register("lint") {
-    group = "linting"
-    description = "Lints the entire project using detekt"
-    dependsOn("detekt")
-}
-
-tasks.register("fmt") {
-    group = "formatting"
-    description = "Formats the entire project using ktfmt"
-    dependsOn("ktfmtFormat")
-}
+tasks.test { useJUnitPlatform() }
