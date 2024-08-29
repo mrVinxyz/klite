@@ -4,8 +4,8 @@ import query.Table
 // TODO use a pool so that we're able to use a in-memory database
 object Users : Table("user") {
     val id = column<Int>("user_id").setPrimaryKey()
-    val name = column<String>("name")
-    val email = column<String>("email")
+    val name = text("name")
+    val email = text("email")
     val password = column<String>("password")
     val recordStatus = column<String>("record_status")
     val createdAt = column<Long>("created_at")

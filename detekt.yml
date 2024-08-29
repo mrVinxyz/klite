@@ -1,3 +1,0 @@
-potential-bugs:
-  IteratorHasNextCallsNextMethod:
-    active: false
