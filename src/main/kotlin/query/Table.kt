@@ -26,7 +26,7 @@ abstract class Table(private val name: String) {
      *
      * @property primaryKey the primary key column
      */
-    private lateinit var primaryKey: Column<*>
+    private var primaryKey: Column<*>? = null
 
     /**
      * Adds a new column to the table.
