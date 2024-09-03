@@ -3,16 +3,16 @@ package query
 import java.sql.Connection
 
 /**
- * The `Updater` class provides a fluent API for building SQL UPDATE statements.
+ * The `Update` class provides a fluent API for building SQL UPDATE statements.
  *
  * @property table the table on which the UPDATE statement will be executed
  * @property nullableColumnsArgsValues a list of pairs representing the columns to be updated and their corresponding values
  * @property condition the WHERE clause condition for the UPDATE statement
  */
-class Updater(private val table: Table) {
+class Update(private val table: Table) {
     /**
      * Represents a list of pairs containing a column and its nullable value.
-     * This list is used in the `Updater` class to store the columns to be updated and their corresponding values.
+     * This list is used in the `Update` class to store the columns to be updated and their corresponding values.
      *
      * The list is initialized as a mutable list of `Pair<Column<*>, Any?>`, where `Column` represents a column in a table,
      * and `Any?` represents the nullable value of the column.
@@ -36,10 +36,10 @@ class Updater(private val table: Table) {
      * Executes an update query on the specified table.
      *
      * @param init The initialization block used to set the columns and values to update.
-     * @return An instance of [Updater] that allows method chaining.
+     * @return An instance of [Update] that allows method chaining.
      */
-    fun update(init: (Updater) -> Unit): Updater {
-        return Updater(table).apply(init)
+    fun update(init: (Update) -> Unit): Update {
+        return Update(table).apply(init)
     }
 
     /**
@@ -47,9 +47,9 @@ class Updater(private val table: Table) {
      *
      * @param column the column to set the value for
      * @param value the value to set for the column
-     * @return the updated Updater object
+     * @return the updated Update object
      */
-    operator fun <T : Any> set(column: Column<*>, value: T?): Updater {
+    operator fun <T : Any> set(column: Column<*>, value: T?): Update {
         nullableColumnsArgsValues.add(column to value)
         return this
     }
@@ -59,9 +59,9 @@ class Updater(private val table: Table) {
      *
      * @param init a lambda function that takes an instance of the [Where] class and allows you to
      *  construct the WHERE clause by using column comparison operations
-     * @return an [Updater] object that represents the updated query with the WHERE clause applied
+     * @return an [Update] object that represents the updated query with the WHERE clause applied
      */
-    fun where(init: Where.() -> Unit): Updater {
+    fun where(init: Where.() -> Unit): Update {
         val where = Where()
         init(where)
 
@@ -113,15 +113,15 @@ class Updater(private val table: Table) {
  * Updates the table with the specified changes.
  *
  * It takes a lambda function as a parameter which allows the caller to specify the changes to be made
- * to the table. The lambda function has a single argument of type `Updater`. Within the lambda function,
- * the caller can use `Updater` object to set the values of the columns to be updated and add conditions
+ * to the table. The lambda function has a single argument of type `Update`. Within the lambda function,
+ * the caller can use `Update` object to set the values of the columns to be updated and add conditions
  * for the update operation.
  *
  * @param init a lambda function that specifies the changes to be made to the table
- * @return an `Updater` object that can be used to further modify the update operation
+ * @return an `Update` object that can be used to further modify the update operation
  */
-fun Table.update(init: (Updater) -> Unit): Updater {
-    return Updater(this).apply(init)
+fun Table.update(init: (Update) -> Unit): Update {
+    return Update(this).apply(init)
 }
 
 /**
@@ -136,7 +136,7 @@ typealias UpdateResult = Result<Unit>
  * @param conn The database connection on which to execute the update operation.
  * @return An instance of [UpdateResult] indicating the success or failure of the operation.
  */
-fun Updater.persist(conn: Connection): UpdateResult {
+fun Update.persist(conn: Connection): UpdateResult {
     return runCatching {
         val (sql, args) = sqlArgs()
         conn.prepareStatement(sql).use { stmt ->

@@ -3,11 +3,11 @@ package query
 import java.sql.Connection
 
 /**
- * `Selector` construct and executes SQL SELECT statements.
+ * `Select` construct and executes SQL SELECT statements.
  *
  * @param table The table from which data will be selected.
  */
-class Selector(private val table: Table) {
+class Select(private val table: Table) {
     private val selectColumns = mutableListOf<Column<*>>()
     private var argsValues = mutableListOf<Any>()
     private var whereClauses: Where? = null
@@ -20,9 +20,9 @@ class Selector(private val table: Table) {
      * Adds columns to be selected.
      *
      * @param columns Vararg of columns to be selected.
-     * @return The current [Selector] instance.
+     * @return The current [Select] instance.
      */
-    fun select(vararg columns: Column<*>): Selector {
+    fun select(vararg columns: Column<*>): Select {
         columns.takeIf { it.isNotEmpty() }?.let { selectColumns.addAll(columns) }
             ?: selectColumns.addAll(table.getColumnsList())
 
@@ -33,9 +33,9 @@ class Selector(private val table: Table) {
      * Adds a WHERE clause to the SQL query.
      *
      * @param init A lambda function to configure the WHERE clause.
-     * @return The current [Selector] instance.
+     * @return The current [Select] instance.
      */
-    fun where(init: Where.() -> Unit): Selector {
+    fun where(init: Where.() -> Unit): Select {
         val where = Where()
         init(where)
 
@@ -51,14 +51,14 @@ class Selector(private val table: Table) {
      * @param leftColumn The column from the original table.
      * @param rightColumn The column from the attached table.
      * @param joinType The type of join (default is `LEFT`).
-     * @return The current [Selector] instance.
+     * @return The current [Select] instance.
      */
     fun join(
         table: Table,
         leftColumn: Column<*>,
         rightColumn: Column<*>,
         joinType: JoinType = JoinType.LEFT,
-    ): Selector {
+    ): Select {
         val join = Join(this.table, table, leftColumn, rightColumn, joinType)
         joins.add(join)
 
@@ -69,9 +69,9 @@ class Selector(private val table: Table) {
      * Adds an ORDER BY clause to the SQL query.
      *
      * @param init A lambda function to configure the ORDER BY clause.
-     * @return The current [Selector] instance.
+     * @return The current [Select] instance.
      */
-    fun orderBy(init: OrderBy.() -> Unit): Selector {
+    fun orderBy(init: OrderBy.() -> Unit): Select {
         val orderBy = OrderBy()
         init(orderBy)
         this.orderBy = orderBy
@@ -83,9 +83,9 @@ class Selector(private val table: Table) {
      * Adds a LIMIT clause to the SQL query.
      *
      * @param value The maximum number of rows to return.
-     * @return The current Selector instance.
+     * @return The current Select instance.
      */
-    fun limit(value: Int?): Selector {
+    fun limit(value: Int?): Select {
         value?.takeIf { it > 0 }?.let { limit = it }
         return this
     }
@@ -94,9 +94,9 @@ class Selector(private val table: Table) {
      * Adds an OFFSET clause to the SQL query.
      *
      * @param value The number of rows to skip before starting to return rows.
-     * @return The current Selector instance.
+     * @return The current Select instance.
      */
-    fun offset(value: Int?): Selector {
+    fun offset(value: Int?): Select {
         value?.takeIf { it > 0 }?.let { offset = it }
         return this
     }
@@ -106,9 +106,9 @@ class Selector(private val table: Table) {
      *
      * @param limit The maximum number of rows to return.
      * @param offset The number of rows to skip before starting to return rows.
-     * @return The current Selector instance.
+     * @return The current Select instance.
      */
-    fun pagination(limit: Int?, offset: Int?): Selector {
+    fun pagination(limit: Int?, offset: Int?): Select {
         limit(limit)
         offset(offset)
         return this
@@ -158,13 +158,13 @@ class Selector(private val table: Table) {
 }
 
 /**
- * Extension function to initialize a Selector for a table.
+ * Extension function to initialize a Select for a table.
  *
  * @param columns Vararg of columns to be selected.
- * @return A configured [Selector] instance.
+ * @return A configured [Select] instance.
  */
-fun Table.select(vararg columns: Column<*>): Selector {
-    return Selector(this).select(*columns)
+fun Table.select(vararg columns: Column<*>): Select {
+    return Select(this).select(*columns)
 }
 
 /** Represents the result of a SELECT query, returning a single mapped result. */
@@ -177,7 +177,7 @@ typealias SelectGetResult<R> = Result<R>
  * @param mapper A function to map the result set to the desired type.
  * @return The result of the query, containing the mapped object.
  */
-fun <R> Selector.get(conn: Connection, mapper: (Row) -> R): Result<R> {
+fun <R> Select.get(conn: Connection, mapper: (Row) -> R): Result<R> {
     return runCatching {
         val (sql, argsValues) = sqlArgs()
         val stmt = conn.prepareStatement(sql)
@@ -202,7 +202,7 @@ typealias SelectListResult<R> = Result<List<R>>
  * @param mapper A function to map the result set to the desired type.
  * @return The result of the query, containing a list of mapped objects.
  */
-fun <R> Selector.list(conn: Connection, mapper: (Row) -> R): Result<List<R>> {
+fun <R> Select.list(conn: Connection, mapper: (Row) -> R): Result<List<R>> {
     return runCatching {
         val (sql, argsValues) = sqlArgs()
         val stmt = conn.prepareStatement(sql)
