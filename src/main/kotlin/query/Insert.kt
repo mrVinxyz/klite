@@ -4,83 +4,61 @@ import java.sql.Connection
 import java.sql.Statement
 
 /**
- * The `Inserter` class is responsible for building SQL INSERT statements for a given table.
+ * The `Insert` class is responsible for building SQL INSERT statements for a given table.
  *
  * @property table the table for which the INSERT statement will be created
  * @property insertColumns a list of columns to be inserted
  * @property argsValues a list of values to be inserted into the columns
  */
-class Inserter(val table: Table) {
+class Insert(val table: Table) {
     /**
      * Represents a mutable list of columns to be inserted into a table.
      *
-     * This variable holds the list of columns that will be inserted into a table. It is a
-     * [MutableList] of [Column] objects. The type parameter of [Column] can be any type of data
+     * This variable holds the list of columns that will be inserted into a [Table]. It is a
+     * MutableList of [Column] objects. The type parameter of [Column] can be any type of data
      * stored in the column.
-     *
-     * @see Column
      */
     private val insertColumns = mutableListOf<Column<*>>()
 
+
     /**
-     * The `argsValues` variable is a mutable list of any type. It is a private property and is used
-     * within the `Inserter` class. This list is used to store the values that are inserted into the
-     * database table.
-     *
-     * The `argsValues` list is initialized as an empty mutable list. It is updated when the `set`
-     * function, `values` function, or `values` function with a map parameter is called .
-     *
-     * The `set` function adds a value to the `argsValues` list when inserting a value for a
-     * specific column into the table.
-     *
-     * The `values` function adds values to the `argsValues` list when inserting multiple values
-     * into the table. It accepts a variable number of parameters of any type. If any parameter is
-     * null, the corresponding column is added to a `nullColumns` list for removal from the
-     * `insertColumns` list.
-     *
-     * The `values` function with a map parameter adds values to the `argsValues` list based on the
-     * key-value pairs in the map. It iterates through the `insertColumns` list and retrieves the
-     * value from the map based on the key of each column.
-     *
-     * The `sqlArgs` function returns a Pair of a SQL statement and a list of values. It creates a
-     * SQL INSERT statement based on the table name and column names. The "?" placeholders are used
-     * for values, which are retrieved from the `insertColumns` list and appended to the
-     * `argsValues` list.
+     * The `argsValues` property is a mutable list of type `Any`. It is used to store the values that will be used as arguments
+     * in an SQL INSERT statement.
      */
     private val argsValues = mutableListOf<Any>()
 
     /**
-     * Returns an `Inserter` object that can be used to construct an SQL INSERT statement for the
-     * specified table. The `Inserter` object provides various methods to specify the columns and
+     * Returns an `Insert` object that can be used to construct an SQL INSERT statement for the
+     * specified table. The `Insert` object provides various methods to specify the columns and
      * values to be inserted.
      *
-     * @param init The initialization block that takes an `Inserter` object as a parameter. This
+     * @param init The initialization block that takes an `Insert` object as a parameter. This
      *   block is used to set the columns and values for the insertion.
-     * @return An `Inserter` object.
+     * @return An `Insert` object.
      */
-    fun insert(init: (Inserter) -> Unit): Inserter {
-        return Inserter(table).apply(init)
+    fun insert(init: (Insert) -> Unit): Insert {
+        return Insert(table).apply(init)
     }
 
     /**
-     * Inserts the given columns into the current Inserter instance.
+     * Inserts the given columns into the current Insert instance.
      *
      * @param column the columns to insert
-     * @return the current Inserter instance
+     * @return the current Insert instance
      */
-    fun insert(vararg column: Column<*>): Inserter {
+    fun insert(vararg column: Column<*>): Insert {
         insertColumns.addAll(column)
         return this
     }
 
     /**
-     * Sets a column with the specified value in the [Inserter].
+     * Sets a column with the specified value in the [Insert].
      *
      * @param column the column to set the value for
      * @param value the value to set for the column
-     * @return the [Inserter] object
+     * @return the [Insert] object
      */
-    operator fun <T> set(column: Column<*>, value: T?): Inserter {
+    operator fun <T> set(column: Column<*>, value: T?): Insert {
         value?.let { v ->
             insertColumns.add(column)
             argsValues.add(v)
@@ -93,9 +71,9 @@ class Inserter(val table: Table) {
      * Inserts values into the table.
      *
      * @param value the values to be inserted into the table as varargs
-     * @return an instance of Inserter for method chaining
+     * @return an instance of Insert for method chaining
      */
-    fun values(vararg value: Any?): Inserter {
+    fun values(vararg value: Any?): Insert {
         val nullColumns = mutableListOf<Column<*>>()
 
         value.forEachIndexed { index, any ->
@@ -112,9 +90,9 @@ class Inserter(val table: Table) {
      * values corresponding to the columns in the `insertColumns` list are added.
      *
      * @param map a map containing column names and their corresponding values
-     * @return the Inserter object for method chaining
+     * @return the Insert object for method chaining
      */
-    fun values(map: Map<String, Any?>): Inserter {
+    fun values(map: Map<String, Any?>): Insert {
 
         insertColumns.forEach { column ->
             map[column.key()]?.let { value -> value.let { argsValues.add(value) } }
@@ -151,11 +129,11 @@ class Inserter(val table: Table) {
 /**
  * Inserts a new row into the table.
  *
- * @param init a function that initializes the `Inserter` object
- * @return an `Inserter` object
+ * @param init a function that initializes the `Insert` object
+ * @return an `Insert` object
  */
-fun Table.insert(init: Inserter.() -> Unit): Inserter {
-    return Inserter(this).apply(init)
+fun Table.insert(init: (Insert) -> Unit): Insert {
+    return Insert(this).apply(init)
 }
 
 /**
@@ -171,14 +149,14 @@ typealias InsertResult = Result<Map<String, Int>>
  * @param conn the database connection to use for executing the insert operation
  * @return an [InsertResult] object representing the result of the insert operation
  */
-fun Inserter.persist(conn: Connection): InsertResult {
+fun Insert.persist(conn: Connection): InsertResult {
     return runCatching {
         val (sql, args) = sqlArgs()
         val stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)
         setParameters(stmt, args)
         stmt.executeUpdate()
 
-        val idName = this.table.primaryKey<Any>()?.key() ?: "id"
+        val idName = this.table.primaryKey<Any>().key()
         val generatedId = stmt.generatedKeys.getInt(1)
 
         if (generatedId == 0) {

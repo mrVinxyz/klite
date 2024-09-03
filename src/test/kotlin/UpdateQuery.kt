@@ -1,7 +1,7 @@
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
-import query.Updater
+import query.Update
 import query.persist
 
 class UpdateQuery {
@@ -11,7 +11,7 @@ class UpdateQuery {
     @Test
     fun `test update with init block`() {
         val (sql, args) =
-            Updater(Users)
+            Update(Users)
                 .update {
                     it[Users.name] = user.name
                     it[Users.email] = user.email
@@ -19,7 +19,7 @@ class UpdateQuery {
                     it[Users.recordStatus] = user.recordStatus
                     it[Users.createdAt] = user.createdAt
                 }
-                .where { Users.id equal 1 }
+                .where { Users.id eq 1 }
                 .sqlArgs()
 
         assertEquals(
@@ -43,13 +43,13 @@ class UpdateQuery {
     @Test
     fun `test update init block with null values`() {
         val (sql, args) =
-            Updater(Users)
+            Update(Users)
                 .update {
                     it[Users.name] = userNull.name
                     it[Users.recordStatus] = userNull.recordStatus
                     it[Users.createdAt] = userNull.createdAt
                 }
-                .where { Users.id equal 1 }
+                .where { Users.id eq 1 }
                 .sqlArgs()
 
         assertEquals(
@@ -65,7 +65,7 @@ class UpdateQuery {
 
     @Test
     fun `test update empty`() {
-        val (sql, args) = Updater(Users).sqlArgs()
+        val (sql, args) = Update(Users).sqlArgs()
 
         assertEquals("UPDATE user SET ", sql)
         assertEquals(emptyList(), args)
@@ -74,7 +74,7 @@ class UpdateQuery {
     @Test
     fun `test update persist method`() {
         var updateQuery =
-            Updater(Users)
+            Update(Users)
                 .update {
                     it[Users.name] = "Jhon Doe"
                     it[Users.email] = user.email
@@ -82,7 +82,7 @@ class UpdateQuery {
                     it[Users.recordStatus] = user.recordStatus
                     it[Users.createdAt] = user.createdAt
                 }
-                .where { Users.id equal 1 }
+                .where { Users.id eq 1 }
 
         val db = Store()
         db.conn().use {

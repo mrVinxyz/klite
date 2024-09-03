@@ -1,6 +1,6 @@
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import query.Inserter
+import query.Insert
 import query.persist
 
 class InsertQuery {
@@ -10,7 +10,7 @@ class InsertQuery {
     @Test
     fun `test insert with init block`() {
         val (sql, args) =
-            Inserter(Users)
+            Insert(Users)
                 .insert {
                     it[Users.id] = user.id
                     it[Users.name] = user.name
@@ -34,7 +34,7 @@ class InsertQuery {
     @Test
     fun `test insert with vararg columns`() {
         val (sql, args) =
-            Inserter(Users)
+            Insert(Users)
                 .insert(
                     Users.id,
                     Users.name,
@@ -64,7 +64,7 @@ class InsertQuery {
     @Test
     fun `test insert with map`() {
         val (sql, args) =
-            Inserter(Users)
+            Insert(Users)
                 .insert(Users.id, Users.name, Users.email, Users.password)
                 .values(
                     mapOf(
@@ -82,7 +82,7 @@ class InsertQuery {
     @Test
     fun `test insert init block with values with null values`() {
         val (sql, args) =
-            Inserter(Users)
+            Insert(Users)
                 .insert {
                     it[Users.id] = userNull.id
                     it[Users.name] = userNull.name
@@ -101,7 +101,7 @@ class InsertQuery {
     @Test
     fun `test insert varargs columns with values with null values`() {
         val (sql, args) =
-            Inserter(Users)
+            Insert(Users)
                 .insert(
                     Users.id,
                     Users.name,
@@ -126,7 +126,7 @@ class InsertQuery {
     @Test
     fun `test insert map with null values`() {
         val (sql, args) =
-            Inserter(Users)
+            Insert(Users)
                 .insert(Users.id, Users.name, Users.email, Users.password)
                 .values(
                     mapOf(
@@ -144,7 +144,7 @@ class InsertQuery {
 
     @Test
     fun `test insert empty`() {
-        val (sql, args) = Inserter(Users).sqlArgs()
+        val (sql, args) = Insert(Users).sqlArgs()
 
         assertEquals("INSERT INTO user () VALUES ()", sql)
         assertEquals(emptyList<Any>(), args)
@@ -155,7 +155,7 @@ class InsertQuery {
         val db = Store()
 
         val insertQuery =
-            Inserter(Users).insert {
+            Insert(Users).insert {
                 it[Users.id] = user.id
                 it[Users.name] = user.name
                 it[Users.email] = user.email
