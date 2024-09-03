@@ -33,7 +33,7 @@ class SelectQuery {
         val (sql, args) =
             Selector(Users)
                 .select(Users.id, Users.name, Users.email, Users.password)
-                .where { Users.id equal 1 }
+                .where { Users.id eq 1 }
                 .sqlArgs()
 
         Logger.info("[SQL] $sql [ARGS] $args")
@@ -46,7 +46,7 @@ class SelectQuery {
         val (sql, args) =
             Selector(Users)
                 .select(Users.id, Users.name, Users.email, Users.password)
-                .where { Users.id equal null }
+                .where { Users.id eq null }
                 .sqlArgs()
 
         Logger.info("[SQL] $sql [ARGS] $args")
@@ -60,8 +60,8 @@ class SelectQuery {
             Selector(Users)
                 .select(Users.id, Users.name, Users.email, Users.password)
                 .where {
-                    Users.id equal 1
-                    Users.email equal "john"
+                    Users.id eq 1
+                    Users.email eq "john"
                 }
                 .sqlArgs()
 
@@ -137,7 +137,7 @@ class SelectQuery {
         val (sql, args) =
             Selector(Users)
                 .select(Users.id, Users.name, Users.email, Users.password)
-                .where { fn(Users.email, "LOWER") equal "john" }
+                .where { fn(Users.email, "LOWER") eq "john" }
                 .sqlArgs()
 
         Logger.info("[SQL] $sql [ARGS] $args")
@@ -218,7 +218,7 @@ class SelectQuery {
                     Users.createdAt,
                     Users.recordStatus,
                 )
-                .where { Users.id equal 1 }
+                .where { Users.id eq 1 }
 
         var user: User?
 

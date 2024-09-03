@@ -64,7 +64,7 @@ class Where {
      * @param value the value to compare with
      * @param T the type of the column
      */
-    infix fun <T : Any> Column<T>.equal(value: T?) {
+    infix fun <T : Any> Column<T>.eq(value: T?) {
         value?.let {
             if (clauses.isNotEmpty()) {
                 clauses.append(" AND ")

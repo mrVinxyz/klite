@@ -19,7 +19,7 @@ class UpdateQuery {
                     it[Users.recordStatus] = user.recordStatus
                     it[Users.createdAt] = user.createdAt
                 }
-                .where { Users.id equal 1 }
+                .where { Users.id eq 1 }
                 .sqlArgs()
 
         assertEquals(
@@ -49,7 +49,7 @@ class UpdateQuery {
                     it[Users.recordStatus] = userNull.recordStatus
                     it[Users.createdAt] = userNull.createdAt
                 }
-                .where { Users.id equal 1 }
+                .where { Users.id eq 1 }
                 .sqlArgs()
 
         assertEquals(
@@ -82,7 +82,7 @@ class UpdateQuery {
                     it[Users.recordStatus] = user.recordStatus
                     it[Users.createdAt] = user.createdAt
                 }
-                .where { Users.id equal 1 }
+                .where { Users.id eq 1 }
 
         val db = Store()
         db.conn().use {
