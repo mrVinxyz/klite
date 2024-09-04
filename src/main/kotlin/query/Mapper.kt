@@ -10,7 +10,7 @@ import java.sql.ResultSet
  * @constructor Creates a Row object with the given result set.
  * @property resultSet The result set containing the row data.
  */
-class Row(private val resultSet: ResultSet) {
+class Row(val resultSet: ResultSet) {
     /**
      * Retrieves the value of the specified column from the current row of the result set.
      *
@@ -18,8 +18,7 @@ class Row(private val resultSet: ResultSet) {
      * @return the value of the column as type T
      * @suppress Specifies that an unchecked cast is performed
      */
-    @Suppress("UNCHECKED_CAST")
-    operator fun <T : Any> get(column: Column<T>): T {
+    inline operator fun <reified T : Any> get(column: Column<T>): T {
         return when (column.type()) {
             ColumnType.INT -> resultSet.getInt(column.key()) as T
             ColumnType.STRING -> {
@@ -36,6 +35,49 @@ class Row(private val resultSet: ResultSet) {
             }
 
             ColumnType.BOOLEAN -> resultSet.getBoolean(column.key()) as T
+        }
+    }
+
+    // TODO
+//    inline operator fun <reified T : Any> get(column: Column<T>): T {
+//        return when (T::class) {
+//            Int::class -> resultSet.getInt(column.key()) as T
+//            String::class -> {
+//                val value = resultSet.getString(column.key())
+//                (value ?: "") as T
+//            }
+//
+//            Long::class -> resultSet.getLong(column.key()) as T
+//            Float::class -> resultSet.getFloat(column.key()) as T
+//            Double::class -> resultSet.getDouble(column.key()) as T
+//            BigDecimal::class -> {
+//                val value = resultSet.getBigDecimal(column.key())
+//                (value ?: BigDecimal.ZERO) as T
+//            }
+//
+//            Boolean::class -> resultSet.getBoolean(column.key()) as T
+//            else -> error("Unsupported type: ${T::class}")
+//        }
+//    }
+
+    inline operator fun <reified T : Any> get(column: String): T {
+        return when (T::class) {
+            Int::class -> resultSet.getInt(column) as T
+            String::class -> {
+                val value = resultSet.getString(column)
+                (value ?: "") as T
+            }
+
+            Long::class -> resultSet.getLong(column) as T
+            Float::class -> resultSet.getFloat(column) as T
+            Double::class -> resultSet.getDouble(column) as T
+            BigDecimal::class -> {
+                val value = resultSet.getBigDecimal(column)
+                (value ?: BigDecimal.ZERO) as T
+            }
+
+            Boolean::class -> resultSet.getBoolean(column) as T
+            else -> error("Unsupported type: ${T::class}")
         }
     }
 }
