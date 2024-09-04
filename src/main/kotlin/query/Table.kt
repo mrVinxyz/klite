@@ -146,3 +146,22 @@ abstract class Table(private val name: String) {
      */
     fun getColumnsList(): List<Column<*>> = columns
 }
+
+/**
+ * Selects the count of records in a table.
+ *
+ * @param transaction The transaction function to execute the query within a database connection.
+ * @return Result<Int> The count of rows in the table.
+ */
+fun Table.selectCount(transaction: Transaction<Result<Int>>): Result<Int> {
+    val sql = "SELECT COUNT(*) FROM ${this.name()}"
+    return transaction { conn ->
+        val stmt = conn.prepareStatement(sql)
+        val rs = stmt.executeQuery()
+        if(rs.next()) {
+            Result.success(rs.getInt(1))
+        } else {
+            Result.success(0)
+        }
+    }
+}
