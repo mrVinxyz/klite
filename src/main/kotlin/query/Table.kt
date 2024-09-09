@@ -1,6 +1,7 @@
 package query
 
 import java.math.BigDecimal
+import java.sql.Connection
 
 /**
  * Represents a table in a database.
@@ -148,20 +149,39 @@ abstract class Table(private val name: String) {
 }
 
 /**
- * Selects the count of records in a table.
+ * Executes a SQL query to retrieve the count of rows in the table.
  *
- * @param transaction The transaction function to execute the query within a database connection.
- * @return Result<Int> The count of rows in the table.
+ * @param conn the database connection used to execute the query
+ * @return a Result object - [Result.success] The number of records this given table has.
+ * [Result.failure] Any error that may have occurred in the process.
  */
-fun Table.selectCount(transaction: Transaction<Result<Int>>): Result<Int> {
+fun Table.selectCount(conn: Connection): Result<Int> {
     val sql = "SELECT COUNT(*) FROM ${this.name()}"
-    return transaction { conn ->
-        val stmt = conn.prepareStatement(sql)
-        val rs = stmt.executeQuery()
-        if(rs.next()) {
-            Result.success(rs.getInt(1))
-        } else {
-            Result.success(0)
+
+    return runCatching {
+        conn.prepareStatement(sql).use { stmt ->
+            stmt.executeQuery().use { rs ->
+                if (rs.next()) rs.getInt(1) else 0
+            }
+        }
+    }
+}
+
+/**
+ * Executes a SQL query to check if a record exists in the table based on the provided column value.
+ *
+ * @param conn the database connection
+ * @param column the column to check for existence
+ * @return the result of the query, true if a record exists, false otherwise
+ */
+fun Table.selectExists(conn: Connection, column: Column<Any>): Result<Boolean> {
+    val sql = "SELECT EXISTS(SELECT 1 FROM ${this.name()} WHERE ${column.key()} = ? LIMIT 1)"
+
+    return runCatching {
+        conn.prepareStatement(sql).use { statement ->
+            statement.setObject(1, column)
+            val rs = statement.executeQuery()
+            rs.next() && rs.getBoolean(1)
         }
     }
 }
