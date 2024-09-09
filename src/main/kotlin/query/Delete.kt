@@ -93,18 +93,12 @@ fun Table.deletePrimary(value: Any): Delete {
 }
 
 /**
- * A type alias representing the result of a delete operation. It is a [Result] that returns [Unit].
- */
-typealias DeleteResult = Result<Unit>
-
-/**
- * Persists the delete operation by executing the SQL delete statement on the provided database
- * connection.
+ * Persists the delete operation by executing the generated SQL query with the given `Connection`.
  *
- * @param conn the database connection on which to execute the delete operation
- * @return the result of the delete operation as a [DeleteResult] object
+ * @param conn The database connection to use for executing the delete operation.
+ * @return [Result.success] Unit // [Result.failure]
  */
-fun Delete.persist(conn: Connection): DeleteResult {
+fun Delete.persist(conn: Connection): Result<Unit> {
     return runCatching {
         val (sql, args) = sqlArgs()
         conn.prepareStatement(sql).use { stmt ->
@@ -113,6 +107,7 @@ fun Delete.persist(conn: Connection): DeleteResult {
         }
 
         Unit
+    }.mapCatching {
+        Exception("Failed to execute delete operation: $it")
     }
-        .onFailure { Result.failure<Unit>(Exception("Failed to execute delete operation: [$it]")) }
 }

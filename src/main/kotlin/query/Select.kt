@@ -167,9 +167,6 @@ fun Table.select(vararg columns: Column<*>): Select {
     return Select(this).select(*columns)
 }
 
-/** Represents the result of a SELECT query, returning a single mapped result. */
-typealias SelectGetResult<R> = Result<R>
-
 /**
  * Executes the SQL SELECT statement and returns a single result.
  *
@@ -191,9 +188,6 @@ fun <R> Select.get(conn: Connection, mapper: (Row) -> R): Result<R> {
         mapper(row)
     }
 }
-
-/** Represents the result of a SELECT query, returning a list of mapped results. */
-typealias SelectListResult<R> = Result<List<R>>
 
 /**
  * Executes the SQL SELECT statement and returns a list of results.
