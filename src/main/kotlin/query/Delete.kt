@@ -72,42 +72,20 @@ class Delete(private val table: Table) {
 }
 
 /**
- * Deletes rows from the table based on the specified conditions.
+ * Persists the delete operation by executing the SQL delete statement on the provided database
+ * connection.
  *
- * @param init a lambda expression to specify the conditions for deletion. It takes an instance of
- *   `Where` as a receiver.
- * @return a `Delete` instance that allows further operations on the delete statement.
- */
-fun Table.deleteWhere(init: Where.() -> Unit): Delete {
-    return Delete(this).deleteWhere(init)
-}
-
-/**
- * Deletes a row from the table with the given primary key value.
- *
- * @param value the value of the primary key
- * @return the Delete object for method chaining
- */
-fun Table.deletePrimary(value: Any): Delete {
-    return Delete(this).deletePrimary(value)
-}
-
-/**
- * Persists the delete operation by executing the generated SQL query with the given `Connection`.
- *
- * @param conn The database connection to use for executing the delete operation.
- * @return [Result.success] Unit // [Result.failure]
+ * @param conn the database connection on which to execute the delete operation
+ * @return the result of the delete operation
  */
 fun Delete.persist(conn: Connection): Result<Unit> {
     return runCatching {
         val (sql, args) = sqlArgs()
         conn.prepareStatement(sql).use { stmt ->
-            setParameters(stmt, args)
+            stmt.setParameters(args)
             stmt.executeUpdate()
         }
 
         Unit
-    }.mapCatching {
-        Exception("Failed to execute delete operation: $it")
     }
 }

@@ -158,16 +158,6 @@ class Select(private val table: Table) {
 }
 
 /**
- * Extension function to initialize a Select for a table.
- *
- * @param columns Vararg of columns to be selected.
- * @return A configured [Select] instance.
- */
-fun Table.select(vararg columns: Column<*>): Select {
-    return Select(this).select(*columns)
-}
-
-/**
  * Executes the SQL SELECT statement and returns a single result.
  *
  * @param conn The database connection to be used.
@@ -176,16 +166,13 @@ fun Table.select(vararg columns: Column<*>): Select {
  */
 fun <R> Select.get(conn: Connection, mapper: (Row) -> R): Result<R> {
     return runCatching {
-        val (sql, argsValues) = sqlArgs()
-        val stmt = conn.prepareStatement(sql)
-        setParameters(stmt, argsValues)
-
-        val rs = stmt.executeQuery()
-        if (!rs.next()) {
-            Result.failure<Unit>(NoSuchElementException("No rows found"))
+        val (sql, args) = sqlArgs()
+        conn.prepareStatement(sql).use { stmt ->
+            stmt.setParameters(args)
+            val rs = stmt.executeQuery()
+            val row = Row(rs)
+            mapper(row)
         }
-        val row = Row(rs)
-        mapper(row)
     }
 }
 
@@ -198,19 +185,20 @@ fun <R> Select.get(conn: Connection, mapper: (Row) -> R): Result<R> {
  */
 fun <R> Select.list(conn: Connection, mapper: (Row) -> R): Result<List<R>> {
     return runCatching {
-        val (sql, argsValues) = sqlArgs()
-        val stmt = conn.prepareStatement(sql)
-        setParameters(stmt, argsValues)
+        val (sql, args) = sqlArgs()
+        conn.prepareStatement(sql).use { stmt ->
+            stmt.setParameters(args)
 
-        val rs = stmt.executeQuery()
-        val rows = Rows(rs).iterator()
+            val rs = stmt.executeQuery()
+            val rows = Rows(rs).iterator()
 
-        val resultList = mutableListOf<R>()
-        while (rows.hasNext()) {
-            val row = rows.next()
-            resultList.add(mapper(row))
+            val resultList = mutableListOf<R>()
+            while (rows.hasNext()) {
+                val row = rows.next()
+                resultList.add(mapper(row))
+            }
+
+            resultList
         }
-
-        resultList
     }
 }

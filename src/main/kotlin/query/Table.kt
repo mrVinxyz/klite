@@ -149,11 +149,66 @@ abstract class Table(private val name: String) {
 }
 
 /**
+ * Inserts a new row into the table.
+ *
+ * @param init a function that initializes the `Insert` object
+ * @return an `Insert` object
+ */
+fun Table.insert(init: (Insert) -> Unit): Insert {
+    return Insert(this).apply(init)
+}
+
+/**
+ * Extension function to initialize a Select for a table.
+ *
+ * @param columns Vararg of columns to be selected.
+ * @return A configured [Select] instance.
+ */
+fun Table.select(vararg columns: Column<*>): Select {
+    return Select(this).select(*columns)
+}
+
+/**
+ * Updates the table with the specified changes.
+ *
+ * It takes a lambda function as a parameter which allows the caller to specify the changes to be made
+ * to the table. The lambda function has a single argument of type `Update`. Within the lambda function,
+ * the caller can use `Update` object to set the values of the columns to be updated and add conditions
+ * for the update operation.
+ *
+ * @param init a lambda function that specifies the changes to be made to the table
+ * @return an `Update` object that can be used to further modify the update operation
+ */
+fun Table.update(init: (Update) -> Unit): Update {
+    return Update(this).apply(init)
+}
+
+/**
+ * Deletes rows from the table based on the specified conditions.
+ *
+ * @param init a lambda expression to specify the conditions for deletion. It takes an instance of
+ *   `Where` as a receiver.
+ * @return a `Delete` instance that allows further operations on the delete statement.
+ */
+fun Table.deleteWhere(init: Where.() -> Unit): Delete {
+    return Delete(this).deleteWhere(init)
+}
+
+/**
+ * Deletes a row from the table with the given primary key value.
+ *
+ * @param value the value of the primary key
+ * @return the Delete object for method chaining
+ */
+fun Table.deletePrimary(value: Any): Delete {
+    return Delete(this).deletePrimary(value)
+}
+
+/**
  * Executes a SQL query to retrieve the count of rows in the table.
  *
  * @param conn the database connection used to execute the query
- * @return a Result object - [Result.success] The number of records this given table has.
- * [Result.failure] Any error that may have occurred in the process.
+ * @return the result of the query
  */
 fun Table.selectCount(conn: Connection): Result<Int> {
     val sql = "SELECT COUNT(*) FROM ${this.name()}"
@@ -168,19 +223,19 @@ fun Table.selectCount(conn: Connection): Result<Int> {
 }
 
 /**
- * Executes a SQL query to check if a record exists in the table based on the provided column value.
+ * Executes a SQL query to check if a record exists in the table based on the provided `column:value`.
  *
  * @param conn the database connection
  * @param column the column to check for existence
  * @return the result of the query, true if a record exists, false otherwise
  */
-fun Table.selectExists(conn: Connection, column: Column<Any>): Result<Boolean> {
+inline fun <reified T> Table.selectExists(conn: Connection, column: Column<Any>, value: T): Result<Boolean> {
     val sql = "SELECT EXISTS(SELECT 1 FROM ${this.name()} WHERE ${column.key()} = ? LIMIT 1)"
 
     return runCatching {
-        conn.prepareStatement(sql).use { statement ->
-            statement.setObject(1, column)
-            val rs = statement.executeQuery()
+        conn.prepareStatement(sql).use { stmt ->
+            stmt.setParameters(listOf(value))
+            val rs = stmt.executeQuery()
             rs.next() && rs.getBoolean(1)
         }
     }

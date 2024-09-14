@@ -127,16 +127,6 @@ class Insert(val table: Table) {
 }
 
 /**
- * Inserts a new row into the table.
- *
- * @param init a function that initializes the `Insert` object
- * @return an `Insert` object
- */
-fun Table.insert(init: (Insert) -> Unit): Insert {
-    return Insert(this).apply(init)
-}
-
-/**
  * Persists the data represented by the current `Insert` object in the given database connection.
  *
  * @param conn the database connection to use for the insert operation
@@ -145,15 +135,13 @@ fun Table.insert(init: (Insert) -> Unit): Insert {
 fun Insert.persist(conn: Connection): Result<Int> {
     return runCatching {
         val (sql, args) = sqlArgs()
-        val stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)
-        setParameters(stmt, args)
-        stmt.executeUpdate()
-
-        val generatedId = stmt.generatedKeys.getInt(1)
-        if (generatedId == 0) {
-            Result.failure<Unit>(Exception("Failed to insert record: [${sql}] [$args]"))
+        val generatedId = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS).use { stmt ->
+            stmt.setParameters(args)
+            stmt.executeUpdate()
+            stmt.generatedKeys.getInt(1)
         }
 
         generatedId
     }
 }
+

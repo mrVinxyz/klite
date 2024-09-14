@@ -2,9 +2,9 @@ import org.gradle.kotlin.dsl.test
 
 plugins { kotlin("jvm") version ("2.0.0") }
 
-group = "mrvin.ktstd"
+group = "mrvin"
 
-version = "0.0.0"
+version = "0.0.1"
 
 repositories { mavenCentral() }
 
