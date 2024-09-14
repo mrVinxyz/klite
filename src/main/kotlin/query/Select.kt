@@ -179,9 +179,9 @@ typealias SelectGetResult<R> = Result<R>
  */
 fun <R> Select.get(conn: Connection, mapper: (Row) -> R): Result<R> {
     return runCatching {
-        val (sql, argsValues) = sqlArgs()
+        val (sql, args) = sqlArgs()
         val stmt = conn.prepareStatement(sql)
-        setParameters(stmt, argsValues)
+        stmt.setParameters(args)
 
         val rs = stmt.executeQuery()
         if (!rs.next()) {
@@ -204,9 +204,9 @@ typealias SelectListResult<R> = Result<List<R>>
  */
 fun <R> Select.list(conn: Connection, mapper: (Row) -> R): Result<List<R>> {
     return runCatching {
-        val (sql, argsValues) = sqlArgs()
+        val (sql, args) = sqlArgs()
         val stmt = conn.prepareStatement(sql)
-        setParameters(stmt, argsValues)
+        stmt.setParameters(args)
 
         val rs = stmt.executeQuery()
         val rows = Rows(rs).iterator()

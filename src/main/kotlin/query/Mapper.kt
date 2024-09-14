@@ -146,20 +146,19 @@ fun ResultSet.iterator(): Iterator<Row> =
 /**
  * Sets the parameters of a prepared statement using the given list of values.
  *
- * @param stmt The prepared statement to set the parameters for.
  * @param params The list of parameters to set.
  */
-internal fun setParameters(stmt: PreparedStatement, params: List<Any?>) {
+fun PreparedStatement.setParameters(params: List<Any?>) {
     params.forEachIndexed { index, param ->
         when (param) {
-            is String -> stmt.setString(index + 1, param)
-            is Int -> stmt.setInt(index + 1, param)
-            is Long -> stmt.setLong(index + 1, param)
-            is Float -> stmt.setFloat(index + 1, param)
-            is Double -> stmt.setDouble(index + 1, param)
-            is BigDecimal -> stmt.setBigDecimal(index + 1, param)
-            is Boolean -> stmt.setBoolean(index + 1, param)
-            else -> stmt.setObject(index + 1, param)
+            is String -> this.setString(index + 1, param)
+            is Int -> this.setInt(index + 1, param)
+            is Long -> this.setLong(index + 1, param)
+            is Float -> this.setFloat(index + 1, param)
+            is Double -> this.setDouble(index + 1, param)
+            is BigDecimal -> this.setBigDecimal(index + 1, param)
+            is Boolean -> this.setBoolean(index + 1, param)
+            else -> this.setObject(index + 1, param)
         }
     }
 }

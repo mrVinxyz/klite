@@ -140,7 +140,7 @@ fun Update.persist(conn: Connection): UpdateResult {
     return runCatching {
         val (sql, args) = sqlArgs()
         conn.prepareStatement(sql).use { stmt ->
-            setParameters(stmt, args)
+            stmt.setParameters(args)
             stmt.executeUpdate()
         }
 

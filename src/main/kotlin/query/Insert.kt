@@ -153,7 +153,7 @@ fun Insert.persist(conn: Connection): InsertResult {
     return runCatching {
         val (sql, args) = sqlArgs()
         val stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)
-        setParameters(stmt, args)
+        stmt.setParameters(args)
         stmt.executeUpdate()
 
         val idName = this.table.primaryKey<Any>().key()

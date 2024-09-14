@@ -109,7 +109,7 @@ class Query(val sql: String, vararg args: Any) {
      * @param stmt The prepared statement to set the parameters for.
      * @param args The list of parameters to set.
      */
-    fun setParameters(stmt: PreparedStatement, args: List<Any>) = query.setParameters(stmt, args)
+    fun setParameters(stmt: PreparedStatement, args: List<Any>) = stmt.setParameters(args)
 }
 
 typealias Transaction<R> = ((Connection) -> R) -> R
