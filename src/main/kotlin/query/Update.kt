@@ -110,21 +110,6 @@ class Update(private val table: Table) {
 }
 
 /**
- * Updates the table with the specified changes.
- *
- * It takes a lambda function as a parameter which allows the caller to specify the changes to be made
- * to the table. The lambda function has a single argument of type `Update`. Within the lambda function,
- * the caller can use `Update` object to set the values of the columns to be updated and add conditions
- * for the update operation.
- *
- * @param init a lambda function that specifies the changes to be made to the table
- * @return an `Update` object that can be used to further modify the update operation
- */
-fun Table.update(init: (Update) -> Unit): Update {
-    return Update(this).apply(init)
-}
-
-/**
  * Represents the result of an update operation.
  * This typealias is used to indicate that the result is of type [Result] with a generic argument of [Unit].
  */

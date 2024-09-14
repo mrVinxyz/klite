@@ -157,16 +157,6 @@ class Select(private val table: Table) {
     }
 }
 
-/**
- * Extension function to initialize a Select for a table.
- *
- * @param columns Vararg of columns to be selected.
- * @return A configured [Select] instance.
- */
-fun Table.select(vararg columns: Column<*>): Select {
-    return Select(this).select(*columns)
-}
-
 /** Represents the result of a SELECT query, returning a single mapped result. */
 typealias SelectGetResult<R> = Result<R>
 

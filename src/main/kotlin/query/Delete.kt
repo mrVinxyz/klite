@@ -72,27 +72,6 @@ class Delete(private val table: Table) {
 }
 
 /**
- * Deletes rows from the table based on the specified conditions.
- *
- * @param init a lambda expression to specify the conditions for deletion. It takes an instance of
- *   `Where` as a receiver.
- * @return a `Delete` instance that allows further operations on the delete statement.
- */
-fun Table.deleteWhere(init: Where.() -> Unit): Delete {
-    return Delete(this).deleteWhere(init)
-}
-
-/**
- * Deletes a row from the table with the given primary key value.
- *
- * @param value the value of the primary key
- * @return the Delete object for method chaining
- */
-fun Table.deletePrimary(value: Any): Delete {
-    return Delete(this).deletePrimary(value)
-}
-
-/**
  * A type alias representing the result of a delete operation. It is a [Result] that returns [Unit].
  */
 typealias DeleteResult = Result<Unit>

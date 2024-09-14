@@ -127,16 +127,6 @@ class Insert(val table: Table) {
 }
 
 /**
- * Inserts a new row into the table.
- *
- * @param init a function that initializes the `Insert` object
- * @return an `Insert` object
- */
-fun Table.insert(init: (Insert) -> Unit): Insert {
-    return Insert(this).apply(init)
-}
-
-/**
  * Represents the result of an insert operation.
  *
  * @property value the map of column names to generated IDs
