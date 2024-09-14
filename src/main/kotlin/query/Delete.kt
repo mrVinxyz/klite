@@ -72,18 +72,13 @@ class Delete(private val table: Table) {
 }
 
 /**
- * A type alias representing the result of a delete operation. It is a [Result] that returns [Unit].
- */
-typealias DeleteResult = Result<Unit>
-
-/**
  * Persists the delete operation by executing the SQL delete statement on the provided database
  * connection.
  *
  * @param conn the database connection on which to execute the delete operation
- * @return the result of the delete operation as a [DeleteResult] object
+ * @return the result of the delete operation
  */
-fun Delete.persist(conn: Connection): DeleteResult {
+fun Delete.persist(conn: Connection): Result<Unit> {
     return runCatching {
         val (sql, args) = sqlArgs()
         conn.prepareStatement(sql).use { stmt ->
@@ -93,5 +88,4 @@ fun Delete.persist(conn: Connection): DeleteResult {
 
         Unit
     }
-        .onFailure { Result.failure<Unit>(Exception("Failed to execute delete operation: [$it]")) }
 }

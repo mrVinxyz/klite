@@ -110,18 +110,12 @@ class Update(private val table: Table) {
 }
 
 /**
- * Represents the result of an update operation.
- * This typealias is used to indicate that the result is of type [Result] with a generic argument of [Unit].
- */
-typealias UpdateResult = Result<Unit>
-
-/**
- * Persists the update operation by executing the SQL statement on the provided database connection.
+ * Persists the changes made by the Update object to the database.
  *
- * @param conn The database connection on which to execute the update operation.
- * @return An instance of [UpdateResult] indicating the success or failure of the operation.
+ * @param conn The database Connection object.
+ * @return A Result object containing Unit if the update operation is successful, or failure with an Exception if it fails.
  */
-fun Update.persist(conn: Connection): UpdateResult {
+fun Update.persist(conn: Connection): Result<Unit> {
     return runCatching {
         val (sql, args) = sqlArgs()
         conn.prepareStatement(sql).use { stmt ->
@@ -131,5 +125,5 @@ fun Update.persist(conn: Connection): UpdateResult {
 
         Unit
     }
-        .onFailure { Result.failure<Unit>(Exception("Failed to execute update operation: [$it]")) }
 }
+
