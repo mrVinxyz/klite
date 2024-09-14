@@ -127,33 +127,21 @@ class Insert(val table: Table) {
 }
 
 /**
- * Represents the result of an insert operation.
+ * Persists the data represented by the current `Insert` object in the given database connection.
  *
- * @property value the map of column names to generated IDs
+ * @param conn the database connection to use for the insert operation
+ * @return a Result object that contains the generated id if the insert operation was successful, or the corresponding exception if it failed
  */
-typealias InsertResult = Result<Map<String, Int>>
-
-/**
- * Persists the data in the database by executing an insert operation using the provided connection.
- *
- * @param conn the database connection to use for executing the insert operation
- * @return an [InsertResult] object representing the result of the insert operation
- */
-fun Insert.persist(conn: Connection): InsertResult {
+fun Insert.persist(conn: Connection): Result<Int> {
     return runCatching {
         val (sql, args) = sqlArgs()
-        val stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)
-        stmt.setParameters(args)
-        stmt.executeUpdate()
-
-        val idName = this.table.primaryKey<Any>().key()
-        val generatedId = stmt.generatedKeys.getInt(1)
-
-        if (generatedId == 0) {
-            Result.failure<Unit>(Exception("Failed to insert record: [${sql}] [$args]"))
+        val generatedId = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS).use { stmt ->
+            stmt.setParameters(args)
+            stmt.executeUpdate()
+            stmt.generatedKeys.getInt(1)
         }
 
-        mapOf(idName to generatedId)
+        generatedId
     }
-        .onFailure { Result.failure<Unit>(Exception("Failed to execute insert operation: [$it]")) }
 }
+

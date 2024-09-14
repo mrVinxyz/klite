@@ -157,9 +157,6 @@ class Select(private val table: Table) {
     }
 }
 
-/** Represents the result of a SELECT query, returning a single mapped result. */
-typealias SelectGetResult<R> = Result<R>
-
 /**
  * Executes the SQL SELECT statement and returns a single result.
  *
@@ -170,20 +167,14 @@ typealias SelectGetResult<R> = Result<R>
 fun <R> Select.get(conn: Connection, mapper: (Row) -> R): Result<R> {
     return runCatching {
         val (sql, args) = sqlArgs()
-        val stmt = conn.prepareStatement(sql)
-        stmt.setParameters(args)
-
-        val rs = stmt.executeQuery()
-        if (!rs.next()) {
-            Result.failure<Unit>(NoSuchElementException("No rows found"))
+        conn.prepareStatement(sql).use { stmt ->
+            stmt.setParameters(args)
+            val rs = stmt.executeQuery()
+            val row = Row(rs)
+            mapper(row)
         }
-        val row = Row(rs)
-        mapper(row)
     }
 }
-
-/** Represents the result of a SELECT query, returning a list of mapped results. */
-typealias SelectListResult<R> = Result<List<R>>
 
 /**
  * Executes the SQL SELECT statement and returns a list of results.
@@ -195,18 +186,19 @@ typealias SelectListResult<R> = Result<List<R>>
 fun <R> Select.list(conn: Connection, mapper: (Row) -> R): Result<List<R>> {
     return runCatching {
         val (sql, args) = sqlArgs()
-        val stmt = conn.prepareStatement(sql)
-        stmt.setParameters(args)
+        conn.prepareStatement(sql).use { stmt ->
+            stmt.setParameters(args)
 
-        val rs = stmt.executeQuery()
-        val rows = Rows(rs).iterator()
+            val rs = stmt.executeQuery()
+            val rows = Rows(rs).iterator()
 
-        val resultList = mutableListOf<R>()
-        while (rows.hasNext()) {
-            val row = rows.next()
-            resultList.add(mapper(row))
+            val resultList = mutableListOf<R>()
+            while (rows.hasNext()) {
+                val row = rows.next()
+                resultList.add(mapper(row))
+            }
+
+            resultList
         }
-
-        resultList
     }
 }
