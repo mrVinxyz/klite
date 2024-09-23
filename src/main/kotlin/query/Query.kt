@@ -1,115 +1,112 @@
 package query
 
 import java.sql.Connection
-import java.sql.PreparedStatement
 import java.sql.Statement
 
-/**
- * Represents a SQL query that can be executed against a database connection.
- *
- * @property sql The SQL statement of the query.
- * @property args The arguments to be used in the query.
- * @constructor Creates a Query object with the given SQL statement and arguments.
- */
-class Query(val sql: String, vararg args: Any) {
-    /**
-     * Represents a list of arguments.
-     *
-     * This variable, `args`, is a property of the `Query` class. It is a read-only list
-     * containing the arguments passed to the query. The `args` property is converted to a
-     * `List` using the `toList()` extension function. The arguments are then stored as elements
-     * in the resulting list.
-     *
-     * @property args The list of arguments.
-     */
-    val args = args.toList()
-
-    /**
-     * Executes a database query that does not require a return value.
-     *
-     * @param connection The connection to the database.
-     * @return A Result object representing the success or failure of the query execution.
-     */
-    fun execute(connection: Connection): Result<Unit> {
-        return runCatching {
-            val stmt = connection.prepareStatement(sql)
-            setParameters(stmt, args)
-            stmt.executeUpdate()
-        }
+class Query(val sql: String, vararg args: Any?) {
+    val args = args.flatMap {
+        if (it is List<*>) it else listOf(it)
     }
 
-    /**
-     * Persists data into the database using the provided connection.
-     *
-     * @param conn The database connection to use for the persistence operation.
-     * @return The newly generated ID of the persisted record, as either an `Int` or a `String`.
-     * @throws Exception if there is an error executing the persistence operation.
-     */
-    fun insert(conn: Connection): Result<Any> {
-        return runCatching {
-            val stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)
-            setParameters(stmt, args)
-            stmt.executeUpdate()
+    fun sqlArgs(): Pair<String, List<Any?>> = Pair(sql, args)
 
-            val generatedKeys = stmt.generatedKeys
-
-            if (!generatedKeys.next()) {
-                Result.failure<Unit>(Exception("Failed to insert record: [${sql}] [${args}]"))
+    fun exec(conn: Connection): Result<Unit> =
+        runCatching {
+            conn.prepareStatement(sql).use { stmt ->
+                stmt.setParameters(args)
+                stmt.executeUpdate()
+                Unit
             }
-
-            val generatedId = generatedKeys.getObject(1)
-
-            if (generatedId == 0) {
-                Result.failure<Unit>(Exception("Failed to insert record: [${sql}] [$args]"))
-            }
-
-            generatedId
+        }.onFailure {
+            error(
+                Exception(
+                    "An error occurred while executing the query:\n [SQL] $sql; [ARGS] $args;",
+                    it
+                )
+            )
         }
-            .onFailure { Result.failure<Unit>(Exception("Failed to execute insert operation: [$it]")) }
+
+    fun persist(conn: Connection): Result<Int> =
+        runCatching {
+            conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS).use { stmt ->
+                stmt.setParameters(args)
+                stmt.executeUpdate()
+
+                stmt.generatedKeys.use { rs ->
+                    if (rs.next()) rs.getInt(1).takeIf { !rs.wasNull() } ?: 0
+                    else 0
+                }
+            }
+        }.onFailure {
+            error(
+                Exception(
+                    "An error occurred while persisting the query and retrieving generated keys:\n [SQL] $sql; [ARGS] $args",
+                    it
+                )
+            )
+        }
+
+    inline fun <reified R> get(conn: Connection, mapper: (Row) -> R): Result<R> =
+        runCatching {
+            conn.prepareStatement(sql).use { stmt ->
+                stmt.setParameters(args)
+                val rs = stmt.executeQuery()
+                val row = Row(rs)
+                mapper(row)
+            }
+        }.onFailure {
+            error(
+                Exception(
+                    "An error occurred while selecting the data:\n [SQL] $sql; [ARGS] $args",
+                    it
+                )
+            )
+        }
+
+    inline fun <reified R> many(conn: Connection, mapper: (Row) -> R): Result<List<R>> =
+        runCatching {
+            conn.prepareStatement(sql).use { stmt ->
+                stmt.setParameters(args)
+
+                val rs = stmt.executeQuery()
+                val rows = Rows(rs).iterator()
+
+                val resultList = mutableListOf<R>()
+                while (rows.hasNext()) {
+                    val row = rows.next()
+                    resultList.add(mapper(row))
+                }
+
+                resultList
+            }
+        }.onFailure {
+            error(
+                Exception(
+                    "An error occurred while selecting the data:\n [SQL] $sql; [ARGS] $args",
+                    it
+                )
+            )
+        }
+
+    fun toJsonStr(): String = "{sql:\"$sql\", args:$args}"
+
+    override fun toString(): String = "SQL = $sql; ARGS = $args;"
+
+    override fun hashCode(): Int {
+        var result = sql.hashCode()
+        result = 31 * result + args.hashCode()
+        return result
     }
 
-    fun selectOne(conn: Connection): Result<Any> {
-        return runCatching {
-            val stmt = conn.prepareStatement(sql)
-            setParameters(stmt, args)
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
 
-            val rs = stmt.executeQuery()
-            if (!rs.next()) {
-                Result.success<List<Any>>(emptyList())
-            }
+        other as Query
 
-            val row = Row(rs)
-            row
-        }
-            .onFailure { Result.failure<Unit>(Exception("Failed to execute selectOne operation: [$it]")) }
+        if (sql != other.sql) return false
+        if (args != other.args) return false
+
+        return true
     }
-
-    fun selectList(conn: Connection): Result<List<Any>> {
-        return runCatching {
-            val stmt = conn.prepareStatement(sql)
-            setParameters(stmt, args)
-
-            val rs = stmt.executeQuery()
-            val rows = Rows(rs).iterator()
-
-            val resultList = mutableListOf<Any>()
-            while (rows.hasNext()) {
-                val row = rows.next()
-                resultList.add(row)
-            }
-
-            resultList
-        }
-            .onFailure { Result.failure<Unit>(Exception("Failed to execute selectList operation: [$it]")) }
-    }
-
-    /**
-     * Sets the parameters of a prepared statement using the given list of values.
-     *
-     * @param stmt The prepared statement to set the parameters for.
-     * @param args The list of parameters to set.
-     */
-    fun setParameters(stmt: PreparedStatement, args: List<Any>) = stmt.setParameters(args)
 }
-
-typealias Transaction<R> = ((Connection) -> R) -> R

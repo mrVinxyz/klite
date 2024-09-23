@@ -2,7 +2,7 @@ import java.sql.Connection
 import java.sql.DriverManager
 import java.util.concurrent.ArrayBlockingQueue
 
-class Store {
+class DB {
     private var conn: Pool = Pool("jdbc:sqlite::memory:")
 
     fun conn(): Conn {

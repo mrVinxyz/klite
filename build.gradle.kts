@@ -1,6 +1,6 @@
 import org.gradle.kotlin.dsl.test
 
-plugins { kotlin("jvm") version ("2.0.0") }
+plugins { kotlin("jvm") version ("2.0.10") }
 
 group = "mrvin"
 
@@ -17,6 +17,6 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
 }
 
-kotlin { jvmToolchain(20) }
+kotlin { jvmToolchain(21) }
 
 tasks.test { useJUnitPlatform() }
