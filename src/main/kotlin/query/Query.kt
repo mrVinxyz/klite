@@ -19,10 +19,7 @@ class Query(val sql: String, vararg args: Any?) {
             }
         }.onFailure {
             error(
-                Exception(
-                    "An error occurred while executing the query:\n [SQL] $sql; [ARGS] $args;",
-                    it
-                )
+                "An error occurred while executing the query:\n [SQL] $sql; [ARGS] $args; ${it.message}; ${it.message};"
             )
         }
 
@@ -39,10 +36,7 @@ class Query(val sql: String, vararg args: Any?) {
             }
         }.onFailure {
             error(
-                Exception(
-                    "An error occurred while persisting the query and retrieving generated keys:\n [SQL] $sql; [ARGS] $args",
-                    it
-                )
+                "An error occurred while persisting a record:\n [SQL] $sql; [ARGS] $args; ${it.message};"
             )
         }
 
@@ -56,10 +50,7 @@ class Query(val sql: String, vararg args: Any?) {
             }
         }.onFailure {
             error(
-                Exception(
-                    "An error occurred while selecting the data:\n [SQL] $sql; [ARGS] $args",
-                    it
-                )
+                "An error occurred while selecting one record:\n [SQL] $sql; [ARGS] $args; ${it.message}",
             )
         }
 
@@ -81,10 +72,7 @@ class Query(val sql: String, vararg args: Any?) {
             }
         }.onFailure {
             error(
-                Exception(
-                    "An error occurred while selecting the data:\n [SQL] $sql; [ARGS] $args",
-                    it
-                )
+                "An error occurred while selecting many records:\n [SQL] $sql; [ARGS] $args; ${it.message};"
             )
         }
 
