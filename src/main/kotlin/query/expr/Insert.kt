@@ -5,13 +5,6 @@ import query.schema.Column
 import query.schema.Table
 import java.sql.Connection
 
-sealed class InsertState {
-    object InsertWithValue: InsertState()
-    object InsertColumns: InsertState()
-    object InsertValues: InsertState()
-    object InsertBuild: InsertState()
-}
-
 class Insert(val table: Table) {
     private val insertColumns = mutableListOf<Column<*>>()
     private val args = mutableListOf<Any>()
@@ -73,6 +66,5 @@ class Insert(val table: Table) {
         return Query(sql.toString(), args)
     }
 }
-
 
 fun Insert.persist(conn: Connection): Result<Int> = intoSqlArgs().persist(conn)
