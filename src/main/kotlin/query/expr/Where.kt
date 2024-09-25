@@ -21,10 +21,12 @@ class Where {
     private val args = mutableListOf<Any>()
 
     val whereClause: () -> String = {
-        StringBuilder()
-            .append(" WHERE ")
-            .append(clauses.toString())
-            .toString()
+         clauses.toString().takeIf { it.isNotEmpty() }?.let {
+            StringBuilder()
+                .append(" WHERE ")
+                .append(it)
+                .toString()
+        } ?: ""
     }
 
     infix fun <T : Any> Column<T>.eq(value: T?) {
@@ -89,7 +91,7 @@ class Where {
                 clauses.append(" AND ")
             }
             clauses.append(this.key())
-            clauses.append("BETWEEN ? AND ?")
+            clauses.append(" BETWEEN ? AND ?")
             args.add(min)
             args.add(max)
         }
