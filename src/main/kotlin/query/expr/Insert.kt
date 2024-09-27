@@ -1,6 +1,7 @@
 package query.expr
 
 import query.Query
+import query.exec.Executor
 import query.schema.Column
 import query.schema.Table
 import java.sql.Connection
@@ -67,4 +68,4 @@ class Insert(val table: Table) {
     }
 }
 
-fun Insert.persist(conn: Connection): Result<Int> = intoSqlArgs().persist(conn)
+fun Insert.persist(conn: Connection): Result<Int> = Executor(conn, intoSqlArgs()).execReturn<Int>()

@@ -1,8 +1,5 @@
 package query
 
-import java.sql.Connection
-import java.sql.Statement
-
 class Query(val sql: String, vararg args: Any?) {
     val args = args.flatMap {
         if (it is List<*>) it else listOf(it)
@@ -10,75 +7,7 @@ class Query(val sql: String, vararg args: Any?) {
 
     fun sqlArgs(): Pair<String, List<Any?>> = Pair(sql, args)
 
-    fun exec(conn: Connection): Result<Unit> =
-        runCatching {
-            conn.prepareStatement(sql).use { stmt ->
-                stmt.setParameters(args)
-                stmt.executeUpdate()
-                Unit
-            }
-        }.onFailure {
-            error(
-                "An error occurred while executing the query:\n [SQL] $sql; [ARGS] $args; ${it.message}; ${it.message};"
-            )
-        }
-
-    fun persist(conn: Connection): Result<Int> =
-        runCatching {
-            conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS).use { stmt ->
-                stmt.setParameters(args)
-                stmt.executeUpdate()
-
-                stmt.generatedKeys.use { rs ->
-                    if (rs.next()) rs.getInt(1).takeIf { !rs.wasNull() } ?: 0
-                    else 0
-                }
-            }
-        }.onFailure {
-            error(
-                "An error occurred while persisting a record:\n [SQL] $sql; [ARGS] $args; ${it.message};"
-            )
-        }
-
-    inline fun <reified R> get(conn: Connection, mapper: (Row) -> R): Result<R> =
-        runCatching {
-            conn.prepareStatement(sql).use { stmt ->
-                stmt.setParameters(args)
-                val rs = stmt.executeQuery()
-                val row = Row(rs)
-                mapper(row)
-            }
-        }.onFailure {
-            error(
-                "An error occurred while selecting one record:\n [SQL] $sql; [ARGS] $args; ${it.message}",
-            )
-        }
-
-    inline fun <reified R> many(conn: Connection, mapper: (Row) -> R): Result<List<R>> =
-        runCatching {
-            conn.prepareStatement(sql).use { stmt ->
-                stmt.setParameters(args)
-
-                val rs = stmt.executeQuery()
-                val rows = Rows(rs).iterator()
-
-                val resultList = mutableListOf<R>()
-                while (rows.hasNext()) {
-                    val row = rows.next()
-                    resultList.add(mapper(row))
-                }
-
-                resultList
-            }
-        }.onFailure {
-            error(
-                "An error occurred while selecting many records:\n [SQL] $sql; [ARGS] $args; ${it.message};"
-            )
-        }
-
-    fun toJsonStr(): String = "{sql:\"$sql\", args:$args}"
-
-    override fun toString(): String = "SQL = $sql; ARGS = $args;"
+    override fun toString(): String = "SQL = $sql;\n ARGS = $args;"
 
     override fun hashCode(): Int {
         var result = sql.hashCode()

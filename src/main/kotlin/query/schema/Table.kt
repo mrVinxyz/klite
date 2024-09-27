@@ -1,6 +1,5 @@
 package query.schema
 
-import query.Query
 import query.expr.Delete
 import query.expr.Insert
 import query.expr.Select
@@ -61,34 +60,16 @@ abstract class Table(val tableName: String, protected val tablePrefix: Boolean =
     }
 }
 
-// TODO - In order for this to work, you'll need to implement some sort of builder interface in order to translate
-// TODO - the columnType into database specific keyword; example: decimal to real.
-//fun Table.createTable(): Query {
-//    val sql = StringBuilder()
-//    sql.append("CREATE TABLE IF NOT EXISTS ${this.tableName} (")
-//
-//    val columns = this.getColumnsList()
-//    columns.forEachIndexed { index, column ->
-//        sql.append("${column.key()} ${column.type().toString().uppercase()}")
-//        if (index < columns.size - 1) sql.append(", ")
-//    }
-//
-//    sql.append(");")
-//
-//    return Query(sql.toString())
-//}
-
 fun Table.insert(init: (Insert) -> Unit): Insert = Insert(this).apply(init)
 
+fun Table.insertMap(valuesMap: Map<String, Any?>){
+}
 
 fun Table.select(vararg columns: Column<*>): Select = Select(this).select(*columns)
 
-
 fun Table.update(init: (Update) -> Unit): Update = Update(this).apply(init)
 
-
 fun Table.deleteWhere(init: Where.() -> Unit): Delete = Delete(this).deleteWhere(init)
-
 
 fun Table.deletePrimary(value: Any): Delete = Delete(this).deletePrimary(value)
 
@@ -104,7 +85,7 @@ fun Table.selectCount(conn: Connection): Result<Int> {
     }
 }
 
-inline fun <reified T> Table.selectExists(conn: Connection, column: Column<Any>, value: T): Result<Boolean> {
+inline fun <reified T> Table.selectExists(conn: Connection, column: Column<*>, value: T): Result<Boolean> {
     val sql = "SELECT EXISTS(SELECT 1 FROM ${this.tableName} WHERE ${column.key()} = ? LIMIT 1)"
 
     return runCatching {

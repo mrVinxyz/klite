@@ -2,6 +2,7 @@ package query.expr
 
 import query.Query
 import query.Row
+import query.exec.Executor
 import query.schema.Column
 import query.schema.Table
 import java.sql.Connection
@@ -100,6 +101,8 @@ class Select(private val table: Table) {
     }
 }
 
-inline fun <reified R> Select.get(conn: Connection, mapper: (Row) -> R): Result<R> = intoSqlArgs().get(conn, mapper)
+inline fun <reified R> Select.get(conn: Connection, mapper: (Row) -> R): Result<R> =
+    Executor(conn, intoSqlArgs()).execMapOne(mapper)
 
-inline fun <reified R> Select.list(conn: Connection, mapper: (Row) -> R): Result<List<R>> = intoSqlArgs().many(conn, mapper)
+inline fun <reified R> Select.list(conn: Connection, mapper: (Row) -> R): Result<List<R>> =
+    Executor(conn, intoSqlArgs()).execMapList(mapper)
