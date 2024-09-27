@@ -23,31 +23,6 @@ class Insert(val table: Table) {
         return this
     }
 
-    fun insert(vararg column: Column<*>): Insert {
-        insertColumns.addAll(column)
-        return this
-    }
-
-    fun values(vararg value: Any?): Insert {
-        val nullColumns = mutableListOf<Column<*>>()
-
-        value.forEachIndexed { index, any ->
-            if (any != null) args.add(any) else nullColumns.add(insertColumns[index])
-        }
-
-        insertColumns.removeAll(nullColumns)
-
-        return this
-    }
-
-    fun values(map: Map<String, Any?>): Insert {
-        insertColumns.forEach { column ->
-            map[column.key()]?.let { value -> value.let { args.add(value) } }
-        }
-
-        return this
-    }
-
     fun intoSqlArgs(): Query {
         val sql = StringBuilder()
 
