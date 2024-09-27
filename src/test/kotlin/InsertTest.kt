@@ -1,16 +1,40 @@
 import query.Query
-import query.expr.persist
 import query.schema.insert
-import java.sql.Connection
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+
+fun Accounts.create(account: Account): Query {
+    return insert {
+        it[accountId] = account.accountId
+        it[balance] = account.balance
+        it[interestRate] = account.interestRate
+        it[accountType] = account.accountType
+        it[isActive] = account.isActive
+        it[createdAt] = account.createdAt
+        it[lastUpdatedAt] = account.lastUpdatedAt
+    }.intoSqlArgs()
+}
+
+fun Accounts.createFilterUnique(account: Account): Query {
+    return insert {
+        it[accountId] = account.accountId
+        it[balance] = account.balance
+        it[interestRate] = account.interestRate
+        it[accountType] = account.accountType
+        it[isActive] = account.isActive
+        it[createdAt] = account.createdAt
+        it[lastUpdatedAt] = account.lastUpdatedAt
+    }.filter {
+        accountId exists account.accountId
+        val query = intoSqlArgs()
+        println(query.toString())
+    }.intoSqlArgs()
+}
 
 class InsertTest {
     val logSqlArgs: (Query) -> Unit = {
         println(it.toString())
-        println("[HashCode] ${it.hashCode()}")
-        println(it.toJsonStr())
+        println("HashCode = ${it.hashCode()}")
     }
 
     @Test
@@ -25,18 +49,7 @@ class InsertTest {
             lastUpdatedAt = 1633117600000L
         )
 
-        val query = Accounts.insert {
-            it[Accounts.accountId] = account.accountId
-            it[Accounts.balance] = account.balance
-            it[Accounts.interestRate] = account.interestRate
-            it[Accounts.accountType] = account.accountType
-            it[Accounts.isActive] = account.isActive
-            it[Accounts.createdAt] = account.createdAt
-            it[Accounts.lastUpdatedAt] = account.lastUpdatedAt
-        }.intoSqlArgs()
-
-        logSqlArgs(query)
-
+        val query = Accounts.create(account)
         val assertQuery = Query(
             "INSERT INTO account (account_id, account_balance, account_interest_rate, account_type, account_is_active, account_created_at, account_last_updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
             listOf(
@@ -50,36 +63,54 @@ class InsertTest {
             )
         )
 
-        assertTrue(assertQuery.equals(query))
+        assertTrue(assertQuery == query)
     }
 
     @Test
-    fun `test insert init block with values with null values`() {}
-
-
-    @Test
-    fun `test insert persist method`() {
-        lateinit var conn: Connection
+    fun `test insert init block with values with null values`() {
         val account = Account(
             accountId = 1,
             balance = 100.50,
             interestRate = 3.5f,
             accountType = "savings",
             isActive = true,
-            createdAt = 1630425600000L,
-            lastUpdatedAt = 1633117600000L
+            createdAt = null,
+            lastUpdatedAt = null
         )
 
-        val createdId = Accounts.insert {
-            it[Accounts.accountId] = account.accountId
-            it[Accounts.balance] = account.balance
-            it[Accounts.interestRate] = account.interestRate
-            it[Accounts.accountType] = account.accountType
-            it[Accounts.isActive] = account.isActive
-            it[Accounts.createdAt] = account.createdAt
-            it[Accounts.lastUpdatedAt] = account.lastUpdatedAt
-        }.persist(DB().conn()).getOrThrow()
+        val query = Accounts.create(account)
 
-        assertEquals(createdId, account.accountId)
+        val assertQuery = Query(
+            "INSERT INTO account (account_id, account_balance, account_interest_rate, account_type, account_is_active) VALUES (?, ?, ?, ?, ?)",
+            listOf(
+                account.accountId,
+                account.balance,
+                account.interestRate,
+                account.accountType,
+                account.isActive,
+            )
+        )
+
+        assertTrue(assertQuery == query)
+    }
+
+    fun `test insert filter`() {
+        val account = Account(
+            accountId = 1,
+            balance = 100.50,
+            interestRate = 3.5f,
+            accountType = "savings",
+            isActive = true,
+            createdAt = null,
+            lastUpdatedAt = null
+        )
+
+        val query = Accounts.createFilterUnique(account)
+    }
+
+
+    @Test
+    fun `test insert persist method`() {
+
     }
 }

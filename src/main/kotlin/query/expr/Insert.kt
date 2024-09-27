@@ -9,6 +9,7 @@ import java.sql.Connection
 class Insert(val table: Table) {
     private val insertColumns = mutableListOf<Column<*>>()
     private val args = mutableListOf<Any>()
+    var filter: Filter? = null
 
     fun insert(init: (Insert) -> Unit): Insert {
         return Insert(table).apply(init)
@@ -20,6 +21,12 @@ class Insert(val table: Table) {
             args.add(v)
         }
 
+        return this
+    }
+
+    fun filter(block: Filter.(Table) -> Unit): Insert {
+        filter = Filter(table)
+        block(filter!!, table)
         return this
     }
 
@@ -43,4 +50,12 @@ class Insert(val table: Table) {
     }
 }
 
-fun Insert.persist(conn: Connection): Result<Int> = Executor(conn, intoSqlArgs()).execReturn<Int>()
+fun Insert.persist(conn: Connection): Result<Int> {
+    val passedFilter = filter.takeIf { it != null }?.execAll(conn)?.getOrThrow()
+
+    passedFilter.takeIf { it == false }?.let {
+        return Result.success(0)
+    }
+
+    return Executor(conn, intoSqlArgs()).execReturn<Int>()
+}

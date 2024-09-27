@@ -1,5 +1,4 @@
 import query.schema.ColumnType
-import query.schema.createTable
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -101,10 +100,5 @@ class TableTest {
         assertTrue(transactionColumns.any { it.key() == "transaction_from" })
         assertTrue(transactionColumns.any { it.key() == "transaction_amount" })
         assertTrue(transactionColumns.any { it.key() == "transaction_fee" })
-    }
-
-    @Test
-    fun `test create table`(){
-        println(Accounts.createTable().sql)
     }
 }
