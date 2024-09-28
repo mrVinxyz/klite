@@ -1,7 +1,7 @@
 package query.expr
 
 import query.Query
-import query.exec.Executor
+import query.Executor
 import query.schema.Column
 import query.schema.Table
 import java.sql.Connection

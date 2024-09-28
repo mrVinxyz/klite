@@ -1,13 +1,7 @@
-package query.exec
+package query
 
-import query.Query
-import query.Row
-import query.Rows
-import query.setParameters
-import java.math.BigDecimal
 import java.sql.Connection
 import java.sql.Statement
-import kotlin.use
 
 class Executor(val conn: Connection, val query: Query) {
     fun exec(): Result<Unit> =
@@ -19,40 +13,23 @@ class Executor(val conn: Connection, val query: Query) {
             }
         }.onFailure {
             error(
-                "An error occurred while executing the query:\n [SQL] $query.sql; [ARGS] $query.args; ${it.message}; ${it.message};"
+                "An error occurred while executing:\n[SQL] ${query.sql}\n[ARGS] ${query.args}\n${it.message};"
             )
         }
 
-    inline fun <reified T> execReturn(): Result<T> =
+    inline fun <reified T : Any> execReturn(): Result<T> =
         runCatching {
             conn.prepareStatement(query.sql, Statement.RETURN_GENERATED_KEYS).use { stmt ->
                 stmt.setParameters(query.args)
                 stmt.executeUpdate()
 
                 stmt.generatedKeys.use { rs ->
-                    when (T::class) {
-                        Int::class -> rs.getInt(1) as T
-                        String::class -> {
-                            val value = rs.getString(1)
-                            (value ?: "") as T
-                        }
-
-                        Long::class -> rs.getLong(1) as T
-                        Float::class -> rs.getFloat(1) as T
-                        Double::class -> rs.getDouble(1) as T
-                        BigDecimal::class -> {
-                            val value = rs.getBigDecimal(1)
-                            (value ?: BigDecimal.ZERO) as T
-                        }
-
-                        Boolean::class -> rs.getBoolean(1) as T
-                        else -> error("Unsupported type: ${T::class};")
-                    }
+                    Row(rs).get<T>(1) as T
                 }
             }
         }.onFailure {
             error(
-                "An error occurred while persisting a record:\n [SQL] $query.sql; [ARGS] $query.args; ${it.message};"
+                "An error occurred while executing and returning:\n[SQL] ${query.sql}\n[ARGS] ${query.args}\n${it.message};"
             )
         }
 
@@ -66,7 +43,7 @@ class Executor(val conn: Connection, val query: Query) {
             }
         }.onFailure {
             error(
-                "An error occurred while selecting one record:\n [SQL] $query.sql; [ARGS] $query.args; ${it.message};",
+                "An error occurred while executing and mapping one:\n[SQL] ${query.sql}\n[ARGS] ${query.args}\n${it.message};",
             )
         }
 
@@ -88,7 +65,7 @@ class Executor(val conn: Connection, val query: Query) {
             }
         }.onFailure {
             error(
-                "An error occurred while selecting many records:\n [SQL] $query.sql; [ARGS] $query.args; ${it.message};"
+                "An error occurred while executing and mapping list:\n[SQL] ${query.sql}\n[ARGS] ${query.args}\n${it.message};"
             )
         }
 }
