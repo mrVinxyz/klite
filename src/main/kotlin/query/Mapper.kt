@@ -26,23 +26,50 @@ class Row(val resultSet: ResultSet) {
             ColumnType.BOOLEAN -> resultSet.getBoolean(column.key()) as T
         }
 
-    inline operator fun <reified T : Any> get(column: String): T =
+    inline operator fun <reified T : Any> get(arg: Any): T =
         when (T::class) {
-            Int::class -> resultSet.getInt(column) as T
-            String::class -> {
-                val value = resultSet.getString(column)
-                (value ?: "") as T
-            }
+            Int::class -> when (arg) {
+                is Int -> resultSet.getInt(arg)
+                is String -> resultSet.getInt(arg)
+                else -> error("Invalid type: $arg")
+            } as T
 
-            Long::class -> resultSet.getLong(column) as T
-            Float::class -> resultSet.getFloat(column) as T
-            Double::class -> resultSet.getDouble(column) as T
-            BigDecimal::class -> {
-                val value = resultSet.getBigDecimal(column)
-                (value ?: BigDecimal.ZERO) as T
-            }
+            String::class -> when (arg) {
+                is Int -> resultSet.getString(arg) ?: ""
+                is String -> resultSet.getString(arg) ?: ""
+                else -> error("Invalid type: $arg")
+            } as T
 
-            Boolean::class -> resultSet.getBoolean(column) as T
+            Long::class -> when (arg) {
+                is Int -> resultSet.getLong(arg)
+                is String -> resultSet.getLong(arg)
+                else -> error("Invalid type: $arg")
+            } as T
+
+            Float::class -> when (arg) {
+                is Int -> resultSet.getFloat(arg)
+                is String -> resultSet.getFloat(arg)
+                else -> error("Invalid type: $arg")
+            } as T
+
+            Double::class -> when (arg) {
+                is Int -> resultSet.getDouble(arg)
+                is String -> resultSet.getDouble(arg)
+                else -> error("Invalid type: $arg")
+            } as T
+
+            BigDecimal::class -> when (arg) {
+                is Int -> resultSet.getBigDecimal(arg) ?: BigDecimal.ZERO
+                is String -> resultSet.getBigDecimal(arg) ?: BigDecimal.ZERO
+                else -> error("Invalid type: $arg")
+            } as T
+
+            Boolean::class -> when (arg) {
+                is Int -> resultSet.getBoolean(arg)
+                is String -> resultSet.getBoolean(arg)
+                else -> error("Invalid type: $arg")
+            } as T
+
             else -> error("Unsupported type: ${T::class}")
         }
 
