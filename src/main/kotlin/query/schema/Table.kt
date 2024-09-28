@@ -66,7 +66,7 @@ fun Table.createTable(): Query {
 
     this.getColumnsList().forEachIndexed { index, column ->
         index.takeIf { it == 0 }?.let {
-            sql.append("${this .primaryKey<Int>().key()} ${column.type().toSqlType()}")
+            sql.append("${this.primaryKey<Int>().key()} ${column.type().toSqlType()}")
             sql.append(" PRIMARY KEY, ")
             return@forEachIndexed
         }
@@ -94,7 +94,7 @@ fun Table.deleteWhere(init: Where.() -> Unit): Delete = Delete(this).deleteWhere
 
 fun Table.deletePrimary(value: Any): Delete = Delete(this).deletePrimary(value)
 
-fun Table.selectCount(conn: Connection): Result<Int> {
+fun Table.recordsCount(conn: Connection): Result<Int> {
     val sql = "SELECT COUNT(*) FROM ${this.tableName}"
 
     return runCatching {
@@ -106,8 +106,12 @@ fun Table.selectCount(conn: Connection): Result<Int> {
     }
 }
 
-inline fun <reified T> Table.selectExists(conn: Connection, column: Column<*>, value: T): Result<Boolean> {
-    val sql = "SELECT EXISTS(SELECT 1 FROM ${this.tableName} WHERE ${column.key()} = ? LIMIT 1)"
+inline fun <reified T> Table.recordExistsBy(
+    conn: Connection,
+    column: Column<*>,
+    value: T,
+): Result<Boolean> {
+    val sql = "SELECT EXISTS(SELECT 1 FROM ${this.tableName} WHERE ${column.key()} = ?);"
 
     return runCatching {
         conn.prepareStatement(sql).use { stmt ->
@@ -118,3 +122,8 @@ inline fun <reified T> Table.selectExists(conn: Connection, column: Column<*>, v
         }
     }
 }
+
+inline fun <reified T : Any> Table.recordExists(
+    conn: Connection,
+    value: T
+): Result<Boolean> = recordExistsBy(conn, this.primaryKey<Int>(), value)
