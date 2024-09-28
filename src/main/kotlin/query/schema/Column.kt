@@ -10,9 +10,17 @@ enum class ColumnType {
     BOOLEAN,
 }
 
-//fun ColumnType.toSqlType(): String = {
-//    return ""
-//}
+fun ColumnType.toSqlType(): String {
+    return when (this) {
+        ColumnType.STRING -> "TEXT"
+        ColumnType.INT -> "INTEGER"
+        ColumnType.LONG -> "INTEGER"
+        ColumnType.FLOAT -> "REAL"
+        ColumnType.DOUBLE -> "REAL"
+        ColumnType.DECIMAL -> "NUMERIC"
+        ColumnType.BOOLEAN -> "INTEGER"
+    }
+}
 
 open class Column<T : Any>(
     private val key: String,

@@ -1,5 +1,6 @@
 package query.schema
 
+import query.Query
 import query.expr.Delete
 import query.expr.Insert
 import query.expr.Select
@@ -59,6 +60,26 @@ abstract class Table(val tableName: String, protected val tablePrefix: Boolean =
         @Suppress("UNCHECKED_CAST") return primaryKey as Column<T>
     }
 }
+
+fun Table.createTable(): Query {
+    val sql = StringBuilder("CREATE TABLE IF NOT EXISTS ${this.tableName} (")
+
+    this.getColumnsList().forEachIndexed { index, column ->
+        index.takeIf { it == 0 }?.let {
+            sql.append("${this .primaryKey<Int>().key()} ${column.type().toSqlType()}")
+            sql.append(" PRIMARY KEY, ")
+            return@forEachIndexed
+        }
+
+        sql.append("${column.key()} ${column.type().toSqlType()}")
+        sql.append(", ")
+    }
+    sql.setLength(sql.length - 2)
+    sql.append(");")
+
+    return Query(sql.toString())
+}
+
 
 fun Table.insert(init: (Insert) -> Unit): Insert = Insert(this).apply(init)
 
