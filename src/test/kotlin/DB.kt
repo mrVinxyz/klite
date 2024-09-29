@@ -2,8 +2,11 @@ import java.sql.Connection
 import java.sql.DriverManager
 import java.util.concurrent.ArrayBlockingQueue
 
+const val memDB = "jdbc:sqlite::memory:"
+const val fileDB = "jdbc:sqlite:file.db"
+
 class DB {
-    private var conn: Pool = Pool("jdbc:sqlite::memory:")
+    private var conn: Pool = Pool(fileDB)
 
     fun conn(): Conn {
         return conn.acquire() ?: error("No connection available")

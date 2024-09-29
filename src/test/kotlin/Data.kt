@@ -1,4 +1,6 @@
+import query.Executor
 import query.schema.Table
+import query.schema.createTable
 import java.sql.Connection
 
 object Accounts : Table("account") {
@@ -18,12 +20,13 @@ data class Account(
     val accountType: String? = null,
     val isActive: Boolean? = null,
     val createdAt: Long? = null,
-    val lastUpdatedAt: Long? = null
-) {
-    fun setBalance(value: Double) = this.copy(balance = value)
-}
+    val lastUpdatedAt: Long? = null,
+)
 
-object Transaction : Table("transaction", false) {
+fun Accounts.createAccountTable(conn: Connection) =
+    Executor(conn, this.createTable()).exec()
+
+object Transactions : Table("account_transaction", false) {
     val transactionId = integer("transaction_id").setPrimaryKey()
     val transactionTo = text("transaction_to")
     val transactionFrom = text("transaction_from")
@@ -32,14 +35,14 @@ object Transaction : Table("transaction", false) {
     val transactionType = column<String>("transaction_type")
 }
 
-fun create(conn: Connection) {
-    conn.createStatement().use { stmt ->
-        stmt.execute("""""".trimIndent())
-    }
-}
+data class Transaction(
+    val transactionId: Int? = null,
+    val transactionTo: String? = null,
+    val transactionFrom: String? = null,
+    val transactionAmount: Double? = null,
+    val transactionFee: Double? = null,
+    val transactionType: String? = null,
+)
 
-fun feedUserTable(conn: Connection) {
-    conn.createStatement().use { stmt ->
-        stmt.execute("""""".trimIndent())
-    }
-}
+fun Transactions.createTransactionTable(conn: Connection) =
+    Executor(conn, this.createTable()).exec()

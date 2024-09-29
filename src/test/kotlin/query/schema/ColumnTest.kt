@@ -1,5 +1,6 @@
-import query.schema.ColumnType
-import kotlin.test.Test
+package query.schema
+
+import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
