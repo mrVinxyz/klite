@@ -2,119 +2,160 @@ package query.expr
 
 import Account
 import Accounts
-import DB
-import Transaction
 import createAccountTable
-import query.Executor
 import query.Query
 import query.schema.insert
+import java.math.BigDecimal
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 class InsertTest {
-    fun Accounts.create(account: Account): Query {
-        return insert {
-            it[accountId] = account.accountId
-            it[balance] = account.balance
-            it[interestRate] = account.interestRate
-            it[accountType] = account.accountType
-            it[createdAt] = account.createdAt
-            it[isActive] = account.isActive
-        }.intoSqlArgs()
-    }
 
-    val account = Account(
+    val myAccount = Account(
         accountId = 1,
-        balance = 100.50,
+        balance = BigDecimal("100"),
         interestRate = 3.5f,
-        accountType = "savings",
+        accountType = "SAVINGS",
         isActive = true,
-        createdAt = 1630425600000L,
-        lastUpdatedAt = 1633117600000L
-    )
-
-    val transaction = Transaction(
-        transactionId = 1,
-        transactionTo = "@mrvin123",
-        transactionFrom = "@acc456",
-        transactionAmount = 100.50,
-        transactionFee = 0.0,
-        transactionType = "withdrawal",
+        createdAt = System.currentTimeMillis(),
+        lastUpdatedAt = null
     )
 
     @Test
-    fun `test insert with lambda block`() {
+    fun `test basic insert query with lambda block`() {
+        fun Accounts.create(account: Account): Query =
+            insert {
+                accountId to account.accountId
+                balance to account.balance
+                interestRate to account.interestRate
+                accountType to account.accountType
+                createdAt to account.createdAt
+                isActive to account.isActive
+            }.sqlArgs()
+
+        val account = myAccount.copy()
         val query = Accounts.create(account)
+
         val assertQuery = Query(
-            "INSERT INTO account (account_id, account_balance, account_interest_rate, account_type, account_is_active, account_created_at, account_last_updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO account (account_id, account_balance, account_interest_rate, account_type, account_created_at, account_is_active) VALUES (?, ?, ?, ?, ?, ?)",
             listOf(
                 account.accountId,
                 account.balance,
                 account.interestRate,
                 account.accountType,
-                account.isActive,
                 account.createdAt,
-                account.lastUpdatedAt
-            )
-        )
-
-        assertTrue(assertQuery == query)
-    }
-
-    @Test
-    fun `test insert init block with values with null values`() {
-        val accountNull = account.copy(createdAt = null, lastUpdatedAt = null)
-
-        val query = Accounts.create(accountNull)
-
-        val assertQuery = Query(
-            "INSERT INTO account (account_id, account_balance, account_interest_rate, account_type, account_is_active) VALUES (?, ?, ?, ?, ?)",
-            listOf(
-                account.accountId,
-                account.balance,
-                account.interestRate,
-                account.accountType,
                 account.isActive,
             )
         )
 
-        assertTrue(assertQuery == query)
+        assertEquals(assertQuery, query)
     }
 
     @Test
-    fun `test insert persist method`() {
-        val db = DB()
-        Accounts.createAccountTable(db.conn())
+    fun `test insert with varargs selection`() {
+        val query = Accounts. insert(
+            Accounts.accountId,
+            Accounts.balance
+        )
+            .sqlArgs()
 
-        val query = Accounts.create(account)
-        val result = Executor(db.conn(), query).execReturn<Int>()
+        val expectedQuery = Query(
+            "INSERT INTO account (account_id, account_balance) VALUES (?, ?)",
+        )
 
-        assertTrue(result.isSuccess)
-        assertEquals(result.getOrThrow(), 1)
+        assertEquals(expectedQuery, query)
     }
 
-//    @Test
-//    fun `test insert unique filter`() {
-//        val db = DB()
-//        Accounts.createAccountTable(db.conn())
-//        Accounts.create(account)
-//
-//        Transactions.createTransactionTable(db.conn())
-//
-//        val createFilterUnique: (transaction: Transaction, accountId: Int) -> Insert = { transaction, accountId ->
-//            Transactions.insert {
-//                it[Transactions.transactionId] = transaction.transactionId
-//                it[Transactions.transactionAmount] = transaction.transactionAmount
-//                it[Transactions.transactionType] = transaction.transactionType
-//                it[Transactions.transactionTo] = transaction.transactionTo
-//                it[Transactions.transactionFrom] = transaction.transactionFrom
-//                it[Transactions.transactionFee] = transaction.transactionFee
-//            }.filter {
-//                Accounts.accountId exists accountId
-//            }
-//        }
-//
-//        val filterQuery = createFilterUnique(transaction, account.accountId!!)
-//    }
+    @Test
+    fun `test insert with manually specified columns and values`() {
+        val query = Accounts.insert {
+            +Accounts.accountId
+            +Accounts.balance
+            values("123", 1000.0)
+        }
+            .sqlArgs()
+
+        val expectedQuery = Query(
+            "INSERT INTO account (account_id, account_balance) VALUES (?, ?)",
+            listOf("123", 1000.0)
+        )
+
+        assertEquals(expectedQuery, query)
+    }
+
+    @Test
+    fun `test insert with map of values`() {
+        val valuesMap = mapOf(
+            "account_id" to "123",
+            "account_balance" to 1000.0
+        )
+
+        val query = Accounts.insert {
+            +Accounts.accountId
+            +Accounts.balance
+            values(valuesMap)
+        }
+            .sqlArgs()
+
+        val expectedQuery = Query(
+            "INSERT INTO account (account_id, account_balance) VALUES (?, ?)",
+            listOf("123", 1000.0)
+        )
+
+        assertEquals(expectedQuery, query)
+    }
+
+
+    @Test
+    fun `test persist insert`() {
+        val account = myAccount.copy()
+
+        val query = Accounts.insert {
+            Accounts.accountId to account.accountId
+            Accounts.balance to account.balance
+            Accounts.interestRate to account.interestRate
+            Accounts.accountType to account.accountType
+            Accounts.createdAt to account.createdAt
+            Accounts.isActive to account.isActive
+        }
+
+        val result = Database.transaction {
+            Accounts.createAccountTable(it)
+
+            query.persist(it)
+        }
+
+        assertEquals(Result.success(1), result)
+    }
+
+    @Test
+    fun `test insert lazily`() {
+        val account = myAccount.copy()
+
+        val query = Accounts.insert {
+            +Accounts.accountId
+            +Accounts.balance
+            +Accounts.interestRate
+            +Accounts.accountType
+            +Accounts.createdAt
+        }
+
+        val queryWithValues = query.values(
+            mapOf(
+                Accounts.accountId.key() to account.accountId,
+                Accounts.balance.key() to account.balance,
+                Accounts.interestRate.key() to account.interestRate,
+                Accounts.accountType.key() to account.accountType,
+                Accounts.createdAt.key() to account.createdAt,
+            )
+        )
+
+        val result = Database.transaction {
+            Accounts.createAccountTable(it)
+
+            queryWithValues.persist(it)
+        }
+
+        assertEquals(Result.success(1), result)
+    }
 }

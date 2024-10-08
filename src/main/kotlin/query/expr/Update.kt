@@ -2,6 +2,7 @@ package query.expr
 
 import query.Query
 import query.Executor
+import query.exec
 import query.schema.Column
 import query.schema.Table
 import java.sql.Connection
@@ -28,7 +29,7 @@ class Update(private val table: Table) {
         return this
     }
 
-    fun intoSqlArgs(): Query {
+    fun sqlArgs(): Query {
         val sql = StringBuilder()
 
         sql.append("UPDATE ")
@@ -64,4 +65,4 @@ class Update(private val table: Table) {
     }
 }
 
-fun Update.persist(conn: Connection): Result<Unit> = Executor(conn, intoSqlArgs()).exec()
+fun Update.persist(conn: Connection): Result<Unit> = sqlArgs().exec(conn)

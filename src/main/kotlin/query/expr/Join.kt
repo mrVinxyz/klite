@@ -1,6 +1,7 @@
 package query.expr
 
 import query.schema.Column
+import query.schema.Table
 
 enum class JoinType {
     LEFT,
@@ -12,7 +13,7 @@ enum class JoinType {
 
 typealias Clause = Triple<JoinType, Column<*>, Column<*>>
 
-class Join {
+class Join(mainTable: Table) {
     private var joinClause = StringBuilder()
 
     infix fun <T : Any> Column<T>.left(other: Column<*>) = infixClause(Triple(JoinType.LEFT, this, other))
@@ -26,6 +27,10 @@ class Join {
     infix fun <T : Any> Column<T>.full(other: Column<*>) = infixClause(Triple(JoinType.FULL, this, other))
 
     private val infixClause: (clause: Clause) -> Unit = { clause ->
+        val leftTable = if (clause.second.table() == mainTable) clause.second else clause.third
+        val rightTable = if (clause.second.table() != mainTable) clause.second else clause.third
+
+        // Append the JOIN type (LEFT, RIGHT, INNER, OUTER, FULL)
         joinClause.append(
             when (clause.first) {
                 JoinType.LEFT -> " LEFT JOIN "
@@ -36,11 +41,12 @@ class Join {
             }
         )
 
-        joinClause.append(clause.second.table().tableName)
+        // Append the correct tables and columns for the ON clause
+        joinClause.append(rightTable.table().tableName)
         joinClause.append(" ON ")
-        joinClause.append(clause.second.table().tableName).append(".").append(clause.second.key())
+        joinClause.append(leftTable.table().tableName).append(".").append(leftTable.key())
         joinClause.append(" = ")
-        joinClause.append(clause.third.table().tableName).append(".").append(clause.third.key())
+        joinClause.append(rightTable.table().tableName).append(".").append(rightTable.key())
     }
 
     fun joinClauses(): String = joinClause.toString()

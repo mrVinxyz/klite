@@ -21,7 +21,7 @@ class Where {
     private val args = mutableListOf<Any>()
 
     val whereClause: () -> String = {
-         clauses.toString().takeIf { it.isNotEmpty() }?.let {
+        clauses.toString().takeIf { it.isNotEmpty() }?.let {
             StringBuilder()
                 .append(" WHERE ")
                 .append(it)
@@ -84,16 +84,18 @@ class Where {
         }
     }
 
-    infix fun <T : Comparable<T>> Column<T>.between(range: Pair<T?, T?>) {
-        val (min, max) = range
-        if (min != null && max != null) {
-            if (clauses.isNotEmpty()) {
-                clauses.append(" AND ")
+    infix fun <T : Comparable<T>> Column<T>.between(range: Pair<Any?, Any?>?) {
+        if (range != null) {
+            val (min, max) = range
+            if (min != null && max != null) {
+                if (clauses.isNotEmpty()) {
+                    clauses.append(" AND ")
+                }
+                clauses.append(this.key())
+                clauses.append(" BETWEEN ? AND ?")
+                args.add(min)
+                args.add(max)
             }
-            clauses.append(this.key())
-            clauses.append(" BETWEEN ? AND ?")
-            args.add(min)
-            args.add(max)
         }
     }
 

@@ -1,47 +1,36 @@
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
 import java.sql.Connection
-import java.sql.DriverManager
-import java.util.concurrent.ArrayBlockingQueue
 
-const val memDB = "jdbc:sqlite::memory:"
-const val fileDB = "jdbc:sqlite:file.db"
-
-class DB {
-    private var conn: Pool = Pool(fileDB)
-
-    fun conn(): Conn {
-        return conn.acquire() ?: error("No connection available")
-    }
+interface Transactor {
+    fun <R> transaction(block: (Connection) -> Result<R>): Result<R>
 }
 
-class Pool(uri: String, poolSize: Int = 5) {
-    private val connectionPool: ArrayBlockingQueue<Conn> = ArrayBlockingQueue(poolSize)
+object Database : Transactor {
+    private val pool: HikariDataSource = HikariDataSource(
+        HikariConfig().apply {
+            jdbcUrl = "jdbc:sqlite::memory:"   // SQLite in-memory database
+            maximumPoolSize = 2               // Optional: set max pool size
+            poolName = "HikariSQLitePool"      // Optional: custom pool name
+        })
 
-    init {
-        repeat(poolSize) {
-            val connection = DriverManager.getConnection(uri)
-            connectionPool.offer(Conn(connection, this))
+    fun conn(): Connection {
+        return pool.connection
+    }
+
+    override fun <R> transaction(block: (Connection) -> Result<R>): Result<R> {
+        val connection = conn()
+
+        return try {
+            connection.autoCommit = false
+            val result = block(connection)
+            connection.commit()
+            result
+        } catch (e: Exception) {
+            connection.rollback()
+            Result.failure(e)
+        } finally {
+            connection.close()
         }
-    }
-
-    fun acquire(): Conn? {
-        return connectionPool.poll()
-    }
-
-    fun release(connection: Conn?) {
-        connection?.let {
-            if (!it.isClosed) {
-                connectionPool.offer(it)
-            }
-        }
-    }
-
-    fun size(): Int {
-        return connectionPool.size
-    }
-}
-
-class Conn(private val connection: Connection, private val pool: Pool) : Connection by connection {
-    override fun close() {
-        pool.release(this)
     }
 }

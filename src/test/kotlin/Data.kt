@@ -1,6 +1,9 @@
 import query.Executor
+import query.Row
+import query.exec
 import query.schema.Table
 import query.schema.createTable
+import java.math.BigDecimal
 import java.sql.Connection
 
 object Accounts : Table("account") {
@@ -15,7 +18,7 @@ object Accounts : Table("account") {
 
 data class Account(
     val accountId: Int? = null,
-    val balance: Double? = null,
+    val balance: BigDecimal? = null,
     val interestRate: Float? = null,
     val accountType: String? = null,
     val isActive: Boolean? = null,
@@ -24,7 +27,7 @@ data class Account(
 )
 
 fun Accounts.createAccountTable(conn: Connection) =
-    Executor(conn, this.createTable()).exec()
+    this.createTable().exec(conn)
 
 object Transactions : Table("account_transaction", false) {
     val transactionId = integer("transaction_id").setPrimaryKey()
@@ -45,4 +48,4 @@ data class Transaction(
 )
 
 fun Transactions.createTransactionTable(conn: Connection) =
-    Executor(conn, this.createTable()).exec()
+    this.createTable().exec(conn)

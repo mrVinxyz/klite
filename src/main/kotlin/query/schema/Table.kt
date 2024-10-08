@@ -10,10 +10,26 @@ import query.setParameters
 import java.math.BigDecimal
 import java.sql.Connection
 
+/**
+ * The `Table` class represents the structure of a database table.
+ * It is designed to be extended by specific table implementations.
+ *
+ * @param tableName The name of the table in the database.
+ * @param tablePrefix A flag to determine whether the table name should be prefixed to column names (default is `true`).
+ */
 abstract class Table(val tableName: String, protected val tablePrefix: Boolean = true) {
     protected val columns = mutableListOf<Column<*>>()
     private var primaryKey: Column<*>? = null
 
+    /**
+     * Dynamically creates a column for the given key (name) and inferred type [T].
+     *
+     * The column is prefixed with the table name if [tablePrefix] is set to `true`.
+     * The function also maps the type [T] to a corresponding [ColumnType].
+     *
+     * @param key The name of the column (without the table prefix).
+     * @return The created [Column] with the inferred type [T].
+     */
     protected inline fun <reified T : Any> column(key: String): Column<T> {
         val columnType =
             when (T::class) {
@@ -34,44 +50,69 @@ abstract class Table(val tableName: String, protected val tablePrefix: Boolean =
         return column
     }
 
+    // Convenience functions for different column types
     protected fun text(key: String): Column<String> = column(key)
-
     protected fun integer(key: String): Column<Int> = column(key)
-
     protected fun long(key: String): Column<Long> = column(key)
-
     protected fun float(key: String): Column<Float> = column(key)
-
     protected fun double(key: String): Column<Double> = column(key)
-
     protected fun decimal(key: String): Column<BigDecimal> = column(key)
-
     protected fun boolean(key: String): Column<Boolean> = column(key)
 
+    /**
+     * Marks the current column as the primary key.
+     *
+     * @return The current column with the type [T] as the primary key.
+     */
     protected fun <T : Any> Column<T>.setPrimaryKey(): Column<T> {
         primaryKey = this
         return this
     }
 
+    /** Returns a list of all columns in the table. */
     fun getColumnsList(): List<Column<*>> = columns
 
+    /**
+     * Returns the primary key column.
+     * If not primary key has been set, it will set the first column as primary key.
+     *
+     * @return The primary key [Column] of the table.
+     */
     fun <T : Any> primaryKey(): Column<T> {
         if (primaryKey == null) primaryKey = columns.first()
         @Suppress("UNCHECKED_CAST") return primaryKey as Column<T>
     }
 }
 
+/**
+ * Generates an SQL `CREATE TABLE` query for the current table, based on its defined columns.
+ *
+ * The generated query ensures that the table is created if it does not already exist. The first column in the table,
+ * or the explicitly set primary key, is marked as the `PRIMARY KEY`.
+ *
+ * @return A [Query] object containing the generated SQL string.
+ *
+ * Example usage:
+ * ```
+ * val userTable = object : Table("users") {
+ *     val id = integer("id").setPrimaryKey()
+ *     val name = text("name")
+ *     val age = integer("age")
+ * }
+ * val createTableQuery = userTable.createTable()
+ * ```
+ */
 fun Table.createTable(): Query {
     val sql = StringBuilder("CREATE TABLE IF NOT EXISTS ${this.tableName} (")
 
     this.getColumnsList().forEachIndexed { index, column ->
         index.takeIf { it == 0 }?.let {
-            sql.append("${this.primaryKey<Int>().key()} ${column.type().toSqlType()}")
+            sql.append("${this.primaryKey<Int>().key()} ${column.type().sqlTypeStr()}")
             sql.append(" PRIMARY KEY, ")
             return@forEachIndexed
         }
 
-        sql.append("${column.key()} ${column.type().toSqlType()}")
+        sql.append("${column.key()} ${column.type().sqlTypeStr()}")
         sql.append(", ")
     }
     sql.setLength(sql.length - 2)
@@ -81,12 +122,17 @@ fun Table.createTable(): Query {
 }
 
 
-fun Table.insert(init: (Insert) -> Unit): Insert = Insert(this).apply(init)
+fun Table.insert(init: Insert.() -> Unit): Insert = Insert(this).apply(init)
 
-fun Table.insertMap(valuesMap: Map<String, Any?>){
-}
+fun Table.insert(vararg columns: Column<*>): Insert = Insert(this).insert(*columns)
 
 fun Table.select(vararg columns: Column<*>): Select = Select(this).select(*columns)
+
+fun Table.select(init: Select.() -> Unit): Select = Select(this).select(init)
+
+fun Table.selectPrimary(value: Int?, block: Select.() -> Unit): Select = Select(this).selectPrimary(value, block)
+
+fun Table.selectPrimary(block: Select.() -> Unit): Select = Select(this).apply(block)
 
 fun Table.update(init: (Update) -> Unit): Update = Update(this).apply(init)
 

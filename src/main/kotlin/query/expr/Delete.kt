@@ -2,6 +2,7 @@ package query.expr
 
 import query.Query
 import query.Executor
+import query.exec
 import query.schema.Table
 import java.sql.Connection
 
@@ -23,7 +24,7 @@ class Delete(private val table: Table) {
         return deleteWhere { primaryKey eq value }
     }
 
-    fun intoSqlArgs(): Query {
+    fun sqlArgs(): Query {
         val sql = StringBuilder()
 
         sql.append("DELETE FROM ")
@@ -38,4 +39,4 @@ class Delete(private val table: Table) {
     }
 }
 
-fun Delete.persist(conn: Connection): Result<Unit> = Executor(conn, intoSqlArgs()).exec()
+fun Delete.persist(conn: Connection): Result<Unit> = sqlArgs().exec(conn)

@@ -2,7 +2,8 @@ package query.expr
 
 import query.Query
 import query.Row
-import query.Executor
+import query.execMapList
+import query.execMapOne
 import query.schema.Column
 import query.schema.Table
 import java.sql.Connection
@@ -23,8 +24,25 @@ class Select(private val table: Table) {
         return this
     }
 
+    fun select(block: Select.() -> Unit): Select {
+        val select = Select(table)
+        block(select)
+        return select
+    }
+
+    fun selectPrimary(value: Int?, block: Select.() -> Unit): Select {
+        val primaryKey = table.primaryKey<Int>()
+        val select = where { primaryKey eq value }
+        block(select)
+        return select
+    }
+
+    operator fun <T : Any> Column<T>.unaryPlus() {
+        selectColumns.add(this)
+    }
+
     fun where(init: Where.() -> Unit): Select {
-        val where = Where()
+        val where = if (whereClauses == null) Where() else whereClauses!!
         init(where)
         whereClauses = where
 
@@ -32,7 +50,7 @@ class Select(private val table: Table) {
     }
 
     fun join(init: Join.() -> Unit): Select {
-        val join = Join()
+        val join = Join(table)
         init(join)
         joinClauses = join
 
@@ -63,7 +81,7 @@ class Select(private val table: Table) {
         return this
     }
 
-    fun intoSqlArgs(): Query {
+    fun sqlArgs(): Query {
         val sql = StringBuilder()
 
         sql.append("SELECT ")
@@ -101,8 +119,14 @@ class Select(private val table: Table) {
     }
 }
 
-inline fun <reified R> Select.get(conn: Connection, mapper: (Row) -> R): Result<R> =
-    Executor(conn, intoSqlArgs()).execMapOne(mapper)
+inline fun <reified R> Select.get(
+    conn: Connection,
+    mapper: (Row) -> R
+): Result<R> =
+    sqlArgs().execMapOne(conn, mapper)
 
-inline fun <reified R> Select.list(conn: Connection, mapper: (Row) -> R): Result<List<R>> =
-    Executor(conn, intoSqlArgs()).execMapList(mapper)
+inline fun <reified R> Select.list(
+    conn: Connection,
+    mapper: (Row) -> R
+): Result<List<R>> =
+    sqlArgs().execMapList(conn, mapper)
