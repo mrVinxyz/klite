@@ -75,9 +75,17 @@ class Select(private val table: Table) {
         return this
     }
 
-    fun pagination(limit: Int?, offset: Int?): Select {
+    fun pagination(page: Int?, pageSize: Int?): Select {
+        val limit = pageSize ?: 10
+        val offset = if (page != null && page > 0) {
+            (page - 1) * limit
+        } else {
+            0
+        }
+
         limit(limit)
         offset(offset)
+
         return this
     }
 
