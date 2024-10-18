@@ -99,5 +99,18 @@ class Where {
         }
     }
 
+    infix fun <T : Any> Column<T>.inList(values: List<T>?) {
+        values?.takeIf { it.isNotEmpty() }?.let {
+            if (clauses.isNotEmpty()) {
+                clauses.append(" AND ")
+            }
+            clauses.append(this.key())
+            clauses.append(" IN (")
+            clauses.append(values.joinToString(", ") { "?" })
+            clauses.append(")")
+            args.addAll(values)
+        }
+    }
+
     fun whereClauses(): WhereArgs = Pair(whereClause(), args)
 }
