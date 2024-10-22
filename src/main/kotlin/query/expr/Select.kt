@@ -135,8 +135,20 @@ inline fun <reified R> Select.get(
 ): Result<R> =
     sqlArgs().execMapOne(conn, mapper)
 
+inline fun <reified R> Select.getOrThrow(
+    conn: Connection,
+    mapper: (Row) -> R
+): R =
+    sqlArgs().execMapOne(conn, mapper).getOrThrow()
+
 inline fun <reified R> Select.list(
     conn: Connection,
     mapper: (Row) -> R
 ): Result<List<R>> =
     sqlArgs().execMapList(conn, mapper)
+
+inline fun <reified R> Select.listOrThrow(
+    conn: Connection,
+    mapper: (Row) -> R
+): List<R> =
+    sqlArgs().execMapList(conn, mapper).getOrThrow()

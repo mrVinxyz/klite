@@ -55,3 +55,5 @@ class Insert(val table: Table) {
 }
 
 fun Insert.persist(conn: Connection): Result<Int> = sqlArgs().execReturn(conn)
+
+fun Insert.persistOrThrow(conn: Connection): Int = sqlArgs().execReturn(conn).getOrThrow()

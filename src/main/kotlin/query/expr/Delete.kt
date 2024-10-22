@@ -1,7 +1,6 @@
 package query.expr
 
 import query.Query
-import query.Executor
 import query.exec
 import query.schema.Table
 import java.sql.Connection
@@ -40,3 +39,5 @@ class Delete(private val table: Table) {
 }
 
 fun Delete.persist(conn: Connection): Result<Unit> = sqlArgs().exec(conn)
+
+fun Delete.persistOrThrow(conn: Connection): Unit = sqlArgs().exec(conn).getOrThrow()
