@@ -49,10 +49,12 @@ class Select(private val table: Table) {
         return this
     }
 
-    fun join(init: Join.() -> Unit): Select {
+    fun join(vararg attachColumns: Column<*>, init: Join.() -> Unit): Select {
         val join = Join(table)
         init(join)
         joinClauses = join
+
+        selectColumns.addAll(attachColumns)
 
         return this
     }
