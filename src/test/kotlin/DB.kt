@@ -9,9 +9,8 @@ interface Transactor {
 object Database : Transactor {
     private val pool: HikariDataSource = HikariDataSource(
         HikariConfig().apply {
-            jdbcUrl = "jdbc:sqlite::memory:"   // SQLite in-memory database
-            maximumPoolSize = 2               // Optional: set max pool size
-            poolName = "HikariSQLitePool"      // Optional: custom pool name
+            jdbcUrl = "jdbc:sqlite::memory:"
+            maximumPoolSize = 2
         })
 
     fun conn(): Connection {

@@ -1,13 +1,14 @@
 package query.expr
 
 import query.schema.select
+import query.schema.selectPrimary
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class SelectTest {
     @Test
     fun `test basic select query`() {
-        val query = Select(Accounts)
+        val query = Accounts
             .select(Accounts.accountId, Accounts.balance)
             .sqlArgs()
 
@@ -23,8 +24,7 @@ class SelectTest {
         val query = Accounts.select {
             +Accounts.accountId
             +Accounts.balance
-        }
-            .sqlArgs()
+        }.sqlArgs()
 
         val expectedSql = "SELECT account_id, account_balance FROM account"
         val expectedArgs = emptyList<Any>()
@@ -35,25 +35,21 @@ class SelectTest {
 
     @Test
     fun `test basic select query with where clause`() {
-        val query = Select(Accounts)
+        val query = Accounts
             .select(Accounts.accountId, Accounts.balance)
-            .where {
-                Accounts.accountId eq 1
-            }
+            .where { Accounts.accountId eq 1 }
             .sqlArgs()
 
         val expectedSql = "SELECT account_id, account_balance FROM account WHERE account_id = ?"
-
         val expectedArgs = listOf(1)
 
-        // Compare the generated query with the expected result
         assertEquals(expectedSql, query.sql)
         assertEquals(expectedArgs, query.args)
     }
 
     @Test
     fun `test select query with multiple where clause`() {
-        val query = Select(Accounts)
+        val query = Accounts
             .select(Accounts.accountId, Accounts.balance)
             .where {
                 Accounts.accountId eq 1
@@ -65,14 +61,13 @@ class SelectTest {
             "SELECT account_id, account_balance FROM account WHERE account_id = ? AND account_balance BETWEEN ? AND ?"
         val expectedArgs = listOf(1, 1000, 5000)
 
-        // Compare the generated query with the expected result
         assertEquals(expectedSql, query.sql)
         assertEquals(expectedArgs, query.args)
     }
 
     @Test
     fun `test select primary clause`() {
-        val query = Select(Accounts)
+        val query = Accounts
             .selectPrimary(1) {
                 +Accounts.accountId
                 +Accounts.balance
@@ -80,6 +75,7 @@ class SelectTest {
 
         val expectedSql = "SELECT account_id, account_balance FROM account WHERE account_id = ?"
         val expectedArgs = listOf(1)
+
         assertEquals(expectedSql, query.sql)
         assertEquals(expectedArgs, query.args)
     }
@@ -102,24 +98,128 @@ class SelectTest {
     }
 
     @Test
-    fun `test select query with join on real transaction table`() {
-        val query = Select(Accounts)
-            .select(Accounts.accountId, Accounts.balance, Transactions.transactionId, Transactions.transactionAmount)
-            .join {
+    fun `test select query with join`() {
+        val queryA = Accounts
+            .select(Accounts.accountId, Accounts.balance)
+            .join(Transactions.transactionId, Transactions.transactionAmount) {
                 Transactions.transactionFrom inner Accounts.accountId
-                //Accounts.accountId inner Transactions.transactionFrom
             }
-            .where {
-                Accounts.accountId eq 1
-            }
+            .where { Accounts.accountId eq 1 }
+            .sqlArgs()
+
+        val queryB = Select(Accounts)
+            .select(Accounts.accountId, Accounts.balance, Transactions.transactionId, Transactions.transactionAmount)
+            .join { Transactions.transactionFrom inner Accounts.accountId }
+            .where { Accounts.accountId eq 1 }
             .sqlArgs()
 
         val expectedSql =
             "SELECT account_id, account_balance, transaction_id, transaction_amount FROM account INNER JOIN account_transaction ON account.account_id = account_transaction.transaction_from WHERE account_id = ?"
-
         val expectedArgs = listOf(1)
 
-        // Compare the generated query with the expected result
+        assertEquals(expectedSql, queryA.sql)
+        assertEquals(expectedArgs, queryA.args)
+
+        assertEquals(expectedSql, queryB.sql)
+        assertEquals(expectedArgs, queryB.args)
+    }
+
+    @Test
+    fun `test select query with multiple joins`() {
+        val query = Accounts
+            .select(Accounts.accountId, Transactions.transactionAmount)
+            .join(Transactions.transactionId) {
+                Transactions.transactionFrom inner Accounts.accountId
+            }
+            .join(Transactions.transactionTo) {
+                Transactions.transactionTo left Accounts.accountId
+            }
+            .where { Accounts.accountId eq 1 }
+            .sqlArgs()
+
+        val expectedSql = "SELECT account_id, transaction_amount, transaction_id, transaction_to FROM account " +
+                "INNER JOIN account_transaction ON account.account_id = account_transaction.transaction_from " +
+                "LEFT JOIN account_transaction ON account.account_id = account_transaction.transaction_to " +
+                "WHERE account_id = ?"
+        val expectedArgs = listOf(1)
+
+        assertEquals(expectedSql, query.sql)
+        assertEquals(expectedArgs, query.args)
+    }
+
+    @Test
+    fun `test select with order by clause`() {
+        val query = Accounts
+            .select(Accounts.accountId, Accounts.balance)
+            .orderBy { Accounts.balance.desc() }.sqlArgs()
+
+        val expectedSql = "SELECT account_id, account_balance FROM account ORDER BY account_balance DESC"
+        val expectedArgs = emptyList<Any>()
+
+        assertEquals(expectedSql, query.sql)
+        assertEquals(expectedArgs, query.args)
+    }
+
+    @Test
+    fun `test select with multiple order by columns`() {
+        val query = Accounts
+            .select(Accounts.accountId, Accounts.balance)
+            .orderBy {
+                Accounts.balance.desc()
+                Accounts.accountId.asc()
+            }
+            .sqlArgs()
+
+        val expectedSql = "SELECT account_id, account_balance FROM account ORDER BY account_balance DESC, account_id ASC"
+        val expectedArgs = emptyList<Any>()
+
+        assertEquals(expectedSql, query.sql)
+        assertEquals(expectedArgs, query.args)
+    }
+
+    @Test
+    fun `test select with limit and offset`() {
+        val query = Accounts
+            .select(Accounts.accountId, Accounts.balance)
+            .limit(10)
+            .offset(20)
+            .sqlArgs()
+
+        val expectedSql = "SELECT account_id, account_balance FROM account LIMIT ? OFFSET ?"
+        val expectedArgs = listOf(10, 20)
+
+        assertEquals(expectedSql, query.sql)
+        assertEquals(expectedArgs, query.args)
+    }
+
+    @Test
+    fun `test select with pagination`() {
+        val query = Accounts
+            .select(Accounts.accountId, Accounts.balance)
+            .pagination(page = 2, pageSize = 5)
+            .sqlArgs()
+
+        val expectedSql = "SELECT account_id, account_balance FROM account LIMIT ? OFFSET ?"
+        val expectedArgs = listOf(5, 5)
+
+        assertEquals(expectedSql, query.sql)
+        assertEquals(expectedArgs, query.args)
+    }
+
+    @Test
+    fun `test select query with join and additional where clause`() {
+        val query = Accounts
+            .select(Accounts.accountId)
+            .join(Transactions.transactionAmount) {
+                Transactions.transactionFrom inner Accounts.accountId
+            }
+            .where { Transactions.transactionType eq "transfer" }
+            .sqlArgs()
+
+        val expectedSql =
+            "SELECT account_id, transaction_amount FROM account INNER JOIN account_transaction ON account.account_id = account_transaction.transaction_from WHERE transaction_type = ?"
+        val expectedArgs = listOf("transfer")
+
         assertEquals(expectedSql, query.sql)
         assertEquals(expectedArgs, query.args)
     }
