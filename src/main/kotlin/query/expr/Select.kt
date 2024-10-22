@@ -112,7 +112,7 @@ class Select(private val table: Table) {
 
         orderBy?.let {
             sql.append(" ORDER BY ")
-            sql.append(it.toString())
+            sql.append(it.orderByClause())
         }
 
         limit?.let {
