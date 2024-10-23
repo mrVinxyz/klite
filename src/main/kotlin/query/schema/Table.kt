@@ -140,11 +140,17 @@ fun Table.deleteWhere(init: Where.() -> Unit): Delete = Delete(this).deleteWhere
 
 fun Table.deletePrimary(value: Any): Delete = Delete(this).deletePrimary(value)
 
-fun Table.recordsCount(conn: Connection): Result<Int> {
-    val sql = "SELECT COUNT(*) FROM ${this.tableName}"
+fun Table.recordsCount(conn: Connection, block: Where.() -> Unit): Result<Int> {
+    val sql = StringBuilder("SELECT COUNT(*) FROM ${this.tableName}")
+    val where = Where()
+    block(where)
+
+    val clauses = where.whereClauses()
+    sql.append(clauses.first)
 
     return runCatching {
-        conn.prepareStatement(sql).use { stmt ->
+        conn.prepareStatement(sql.toString()).use { stmt ->
+            stmt.setParameters(clauses.second)
             stmt.executeQuery().use { rs ->
                 if (rs.next()) rs.getInt(1) else 0
             }
