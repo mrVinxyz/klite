@@ -20,7 +20,7 @@ class Where {
     private val clauses = StringBuilder()
     private val args = mutableListOf<Any>()
 
-    val whereClause: () -> String = {
+    private val whereClause: () -> String = {
         clauses.toString().takeIf { it.isNotEmpty() }?.let {
             StringBuilder()
                 .append(" WHERE ")
