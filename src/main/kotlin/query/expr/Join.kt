@@ -3,17 +3,15 @@ package query.expr
 import query.schema.Column
 import query.schema.Table
 
-enum class JoinType {
-    LEFT,
-    RIGHT,
-    INNER,
-    OUTER,
-    FULL,
-}
-
-typealias Clause = Triple<JoinType, Column<*>, Column<*>>
-
 class Join(mainTable: Table) {
+    enum class JoinType {
+        LEFT,
+        RIGHT,
+        INNER,
+        OUTER,
+        FULL,
+    }
+
     private var joinClause = StringBuilder()
 
     infix fun <T : Any> Column<T>.left(other: Column<*>) = infixClause(Triple(JoinType.LEFT, this, other))
@@ -26,7 +24,7 @@ class Join(mainTable: Table) {
 
     infix fun <T : Any> Column<T>.full(other: Column<*>) = infixClause(Triple(JoinType.FULL, this, other))
 
-    private val infixClause: (clause: Clause) -> Unit = { clause ->
+    private val infixClause: (clause: Triple<JoinType, Column<*>, Column<*>>) -> Unit = { clause ->
         val leftTable = if (clause.second.table() == mainTable) clause.second else clause.third
         val rightTable = if (clause.second.table() != mainTable) clause.second else clause.third
 
