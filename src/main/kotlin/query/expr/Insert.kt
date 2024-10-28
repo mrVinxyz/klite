@@ -20,10 +20,6 @@ class Insert(val table: Table) {
         args.add(value)
     }
 
-    operator fun <T : Any> Column<T>.unaryPlus() {
-        insertColumns.add(this)
-    }
-
     fun values(vararg value: Any?): Insert {
         require(value.size == insertColumns.size) { "Number of values must match number of columns" }
         args.addAll(value.toList())
