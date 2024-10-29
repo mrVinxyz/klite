@@ -14,6 +14,15 @@ class Update(private val table: Table) {
         return Update(table).apply(init)
     }
 
+    fun updatePrimary(value: Int?, init: (Update) -> Unit): Update {
+        val primaryKey = table.primaryKey<Int>()
+        val updateWithCondition = update {
+            where { primaryKey eq value }
+            init(this)
+        }
+        return updateWithCondition
+    }
+
     operator fun <T : Any> set(column: Column<*>, value: T?): Update {
         nullableColumnsArgsValues.add(column to value)
         return this
