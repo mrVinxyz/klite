@@ -16,6 +16,8 @@ class Select(private val table: Table) {
     private var orderBy: OrderBy? = null
     private var limit: Int? = null
     private var offset: Int? = null
+    private var isCount = false
+    private var isExists = false
 
     fun select(vararg columns: Column<*>): Select {
         columns.takeIf { it.isNotEmpty() }?.let { selectColumns.addAll(columns) }
@@ -24,17 +26,11 @@ class Select(private val table: Table) {
         return this
     }
 
-    fun select(block: Select.() -> Unit): Select {
-        val select = Select(table)
-        block(select)
-        return select
-    }
-
-    fun selectPrimary(value: Int?, block: Select.() -> Unit): Select {
+    fun selectPrimary(value: Int?, vararg columns: Column<*>): Select {
         val primaryKey = table.primaryKey<Int>()
-        val select = where { primaryKey eq value }
-        block(select)
-        return select
+        val selectWithCondition = where { primaryKey eq value }
+        selectWithCondition.select(*columns)
+        return selectWithCondition
     }
 
     operator fun <T : Any> Column<T>.unaryPlus() {
@@ -91,13 +87,31 @@ class Select(private val table: Table) {
         return this
     }
 
+    fun count(): Select {
+        isCount = true
+        selectColumns.clear()
+        return this
+    }
+
+    fun exists(): Select {
+        isExists = true
+        selectColumns.clear()
+        return this
+    }
+
     fun sqlArgs(): Query {
         val sql = StringBuilder()
 
-        sql.append("SELECT ")
-        selectColumns.forEachIndexed { index, column ->
-            sql.append(column.key())
-            if (index < selectColumns.size - 1) sql.append(", ")
+        when {
+            isExists -> sql.append("SELECT EXISTS(SELECT 1")
+            isCount -> sql.append("SELECT COUNT(*)")
+            else -> {
+                sql.append("SELECT ")
+                selectColumns.forEachIndexed { index, column ->
+                    sql.append(column.key())
+                    if (index < selectColumns.size - 1) sql.append(", ")
+                }
+            }
         }
 
         sql.append(" FROM ")
@@ -110,19 +124,25 @@ class Select(private val table: Table) {
             args.addAll(it.second)
         }
 
-        orderBy?.let {
-            sql.append(" ORDER BY ")
-            sql.append(it.orderByClause())
+        if (!isCount && !isExists) {
+            orderBy?.let {
+                sql.append(" ORDER BY ")
+                sql.append(it.orderByClause())
+            }
+
+            limit?.let {
+                sql.append(" LIMIT ?")
+                args.add(it)
+            }
+
+            offset?.let {
+                sql.append(" OFFSET ?")
+                args.add(it)
+            }
         }
 
-        limit?.let {
-            sql.append(" LIMIT ?")
-            args.add(it)
-        }
-
-        offset?.let {
-            sql.append(" OFFSET ?")
-            args.add(it)
+        if (isExists) {
+            sql.append(")")
         }
 
         return Query(sql.toString(), args)
