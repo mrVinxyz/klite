@@ -128,13 +128,11 @@ fun Table.insert(vararg columns: Column<*>): Insert = Insert(this).insert(*colum
 
 fun Table.select(vararg columns: Column<*>): Select = Select(this).select(*columns)
 
-fun Table.select(init: Select.() -> Unit): Select = Select(this).select(init)
+fun Table.selectPrimary(value: Int?, vararg columns: Column<*>): Select = Select(this).selectPrimary(value, *columns)
 
-fun Table.selectPrimary(value: Int?, block: Select.() -> Unit): Select = Select(this).selectPrimary(value, block)
+fun Table.update(block: (Update) -> Unit): Update = Update(this).apply(block)
 
-fun Table.selectPrimary(block: Select.() -> Unit): Select = Select(this).apply(block)
-
-fun Table.update(init: (Update) -> Unit): Update = Update(this).apply(init)
+fun Table.updatePrimary(value: Int?, block: (Update) -> Unit) = Update(this).updatePrimary(value, block)
 
 fun Table.deleteWhere(init: Where.() -> Unit): Delete = Delete(this).deleteWhere(init)
 
