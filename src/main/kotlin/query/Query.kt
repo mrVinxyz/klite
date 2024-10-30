@@ -25,7 +25,7 @@ open class Query(val sql: String, vararg args: Any?) {
      * If a parameter is a list, it is flattened into individual elements.
      */
     val args = args.flatMap {
-        if (it is List<*>) it else listOf(it)
+        it as? List<*> ?: listOf(it)
     }
 
     /**
