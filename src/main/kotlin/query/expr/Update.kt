@@ -44,7 +44,7 @@ class Update(private val table: Table) {
         sql.append(table.tableName)
         sql.append(" SET ")
 
-        var args = mutableListOf<Any?>(nullableColumnsArgsValues.size)
+        var args = mutableListOf<Any?>()
         nullableColumnsArgsValues.forEach { (column, value) ->
             if (value == null) {
                 sql.append(column.key())
