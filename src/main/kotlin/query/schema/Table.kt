@@ -17,7 +17,7 @@ import java.sql.Connection
  * @param tableName The name of the table in the database.
  * @param tablePrefix A flag to determine whether the table name should be prefixed to column names (default is `true`).
  */
-abstract class Table(val tableName: String, protected val tablePrefix: Boolean = true) {
+abstract class Table(val tableName: String, protected val tablePrefix: Boolean = false) {
     protected val columns = mutableListOf<Column<*>>()
     private var primaryKey: Column<*>? = null
 
