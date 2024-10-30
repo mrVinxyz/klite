@@ -61,8 +61,15 @@ open class Column<T : Any>(
 ) {
     /** Returns the name of the column. */
     fun key(): String = key
+
     /** Returns the [ColumnType] of the column, which represents the type of data it stores. */
     fun type(): ColumnType = type
+
     /** Returns the [Table] to which this column belongs. */
     fun table(): Table = table
+
+    /** Returns the Column formatted with table name alias. */
+    fun withTableAlias(): Column<T> {
+        return Column(table.tableName.plus(".").plus(key), type, table)
+    }
 }
