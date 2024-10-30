@@ -70,7 +70,7 @@ fun Query.exec(conn: Connection): Result<Unit> = Executor.exec(conn, this)
  * @param conn The [Connection] to the database.
  * @return A [Result] of the generated key of type [Int].
  */
-fun Query.execReturn(conn: Connection): Result<Int> = Executor.execReturn(conn, this)
+fun Query.execReturnKey(conn: Connection): Result<Int> = Executor.execReturnKey(conn, this)
 
 /**
  * Executes a SQL query that returns a single row and maps the result to an object of type [R] using the provided mapper function.

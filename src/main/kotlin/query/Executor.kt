@@ -53,7 +53,7 @@ object Executor {
      * val id: Result<Int> = Executor.execReturn(conn, query)
      * ```
      */
-    inline fun <reified T : Any> execReturn(conn: Connection, query: Query): Result<T> =
+    inline fun <reified T : Any> execReturnKey(conn: Connection, query: Query): Result<T> =
         runCatching {
             conn.prepareStatement(query.sql, Statement.RETURN_GENERATED_KEYS).use { stmt ->
                 stmt.setParameters(query.args)
