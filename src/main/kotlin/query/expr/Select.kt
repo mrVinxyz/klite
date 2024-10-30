@@ -16,7 +16,6 @@ class Select(private val table: Table) {
     private var orderBy: OrderBy? = null
     private var limit: Int? = null
     private var offset: Int? = null
-    private var isCount = false
     private var isExists = false
 
     fun select(vararg columns: Column<*>): Select {
@@ -87,15 +86,12 @@ class Select(private val table: Table) {
         return this
     }
 
-    fun count(): Select {
-        isCount = true
-        selectColumns.clear()
-        return this
-    }
-
-    fun exists(): Select {
+    fun exists(block: Where.() -> Unit): Select {
         isExists = true
         selectColumns.clear()
+
+        where(block)
+
         return this
     }
 
@@ -104,11 +100,11 @@ class Select(private val table: Table) {
 
         when {
             isExists -> sql.append("SELECT EXISTS(SELECT 1")
-            isCount -> sql.append("SELECT COUNT(*)")
             else -> {
                 sql.append("SELECT ")
                 selectColumns.forEachIndexed { index, column ->
-                    sql.append(column.key())
+                    sql.append("${column.table().tableName}.${column.key()}")
+                    //sql.append(column.key())
                     if (index < selectColumns.size - 1) sql.append(", ")
                 }
             }
@@ -117,14 +113,16 @@ class Select(private val table: Table) {
         sql.append(" FROM ")
         sql.append(table.tableName)
 
-        joinClauses?.joinClauses()?.let { sql.append(it) }
+        joinClauses?.joinClauses()?.let {
+            sql.append(it)
+        }
 
         whereClauses?.whereClauses()?.let {
             sql.append(it.first)
             args.addAll(it.second)
         }
 
-        if (!isCount && !isExists) {
+        if (!isExists) {
             orderBy?.let {
                 sql.append(" ORDER BY ")
                 sql.append(it.orderByClause())

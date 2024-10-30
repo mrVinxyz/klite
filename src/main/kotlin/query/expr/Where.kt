@@ -28,7 +28,7 @@ class Where {
         if (clauses.isNotEmpty() && !isFirstInGroup) {
             clauses.append(if (isInOrBlock && groupLevel == 1) " OR " else " AND ")
         }
-        clauses.append(column.key())
+        clauses.append(column.table().tableName.plus(".").plus(column.key()))
         clauses.append(" $operator")
         if (value != null) {
             clauses.append(" ?")
