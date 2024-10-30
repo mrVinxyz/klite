@@ -89,8 +89,8 @@ class Row(val resultSet: ResultSet) {
         when (T::class) {
             /// For Matching value, handle both column index (Int) and column name (String)
             String::class -> when (arg) {
-                is Int -> resultSet.getString(arg) ?: "" /// Value by index, default to empty string if null
-                is String -> resultSet.getString(arg) ?: "" /// Value by column name, default to empty string if null
+                is Int -> resultSet.getString(arg) ?: "" /// Value by index
+                is String -> resultSet.getString(arg) ?: "" /// Value by column name
                 else -> error("Invalid type: $arg")
             } as T
 
