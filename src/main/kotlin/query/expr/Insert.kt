@@ -6,12 +6,34 @@ import query.schema.Column
 import query.schema.Table
 import java.sql.Connection
 
+sealed class InsertResult {
+    data class Success(
+        val generatedId: Int? = null
+    ) : InsertResult()
+
+    data class FilterFailure(
+        val error: FilterResult? = null,
+    ) : InsertResult()
+
+    data class DatabaseError(
+        val exception: Exception
+    ) : InsertResult()
+
+    fun isSuccess() = this is Success
+    fun isFilterFailure() = this is FilterFailure
+    fun isDatabaseError() = this is DatabaseError
+
+    fun getGeneratedIdOrNull() = (this as? Success)?.generatedId
+    fun getErrorOrNull() = (this as? FilterFailure)?.error
+    fun getExceptionOrNull() = (this as? DatabaseError)?.exception
+}
+
 class Insert(val table: Table) {
     private val insertColumns = mutableListOf<Column<*>>()
     private val args = mutableListOf<Any?>()
     internal var filter: Filter? = null
 
-    fun insert(block: Insert.() -> Unit): Insert = Insert(table).apply(block)
+    fun insert(block: Insert.() -> Unit): Insert = apply(block)
 
     fun insert(vararg columns: Column<*>): Insert {
         insertColumns.addAll(columns)
@@ -45,6 +67,8 @@ class Insert(val table: Table) {
     fun getFilter() = filter
 
     fun sqlArgs(): Query {
+        require(insertColumns.isNotEmpty()) { "No columns specified for insert" }
+
         val sql = StringBuilder()
 
         sql.append("INSERT INTO ")
@@ -61,22 +85,24 @@ class Insert(val table: Table) {
     }
 }
 
-fun Insert.persist(conn: Connection): Result<Int> {
+fun Insert.persist(conn: Connection): InsertResult {
     filter?.let { ft ->
         val result = ft.execute(conn)
         if (!result.ok) {
-            return Result.failure(error(result.err))
+            return InsertResult.FilterFailure(result)
         }
     }
 
-    return sqlArgs().execReturnKey(conn)
-}
-
-fun Insert.persistOrThrow(conn: Connection): Int {
-    filter?.let { ft ->
-        val result = ft.execute(conn)
-        if (!result.ok) error(result.err)
+    return try {
+        val result = sqlArgs().execReturnKey(conn)
+        when {
+            result.isSuccess -> {
+                val id = result.getOrNull()
+                InsertResult.Success(id)
+            }
+            else ->  InsertResult.DatabaseError(result.exceptionOrNull() as java.lang.Exception)
+        }
+    } catch (e: Exception) {
+        InsertResult.DatabaseError(e)
     }
-
-    return sqlArgs().execReturnKey(conn).getOrThrow()
 }

@@ -6,9 +6,22 @@ import query.schema.Column
 import query.schema.Table
 import java.sql.Connection
 
+sealed class UpdateResult {
+    data object Success : UpdateResult()
+
+    data class FilterFailure(
+        val error: FilterResult? = null,
+    ) : UpdateResult()
+
+    data class DatabaseError(
+        val exception: Exception
+    ) : UpdateResult()
+}
+
 class Update(private val table: Table) {
     private val nullableColumnsArgsValues = mutableListOf<Pair<Column<*>, Any?>>()
     private var conditionClauses: Where? = null
+    internal var filter: Filter? = null
 
     fun update(init: (Update) -> Unit): Update {
         return Update(table).apply(init)
@@ -37,7 +50,15 @@ class Update(private val table: Table) {
         return this
     }
 
+    fun filter(block: Filter.() -> Unit): Update {
+        filter = Filter(table)
+        block(filter!!)
+        return this
+    }
+
     fun sqlArgs(): Query {
+        require(nullableColumnsArgsValues.isNotEmpty()) { "No columns specified for update" }
+
         val sql = StringBuilder()
 
         sql.append("UPDATE ")
@@ -73,6 +94,21 @@ class Update(private val table: Table) {
     }
 }
 
-fun Update.persist(conn: Connection): Result<Unit> = sqlArgs().exec(conn)
+fun Update.persist(conn: Connection): UpdateResult {
+    filter?.let { ft ->
+        val result = ft.execute(conn)
+        if (!result.ok) {
+            return UpdateResult.FilterFailure(result)
+        }
+    }
 
-fun Update.persistOrThrow(conn: Connection): Unit = sqlArgs().exec(conn).getOrThrow()
+    return try {
+        val result = sqlArgs().exec(conn)
+        when {
+            result.isSuccess -> UpdateResult.Success
+            else -> UpdateResult.DatabaseError(result.exceptionOrNull() as Exception)
+        }
+    } catch (e: Exception) {
+        UpdateResult.DatabaseError(e)
+    }
+}
