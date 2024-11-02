@@ -23,8 +23,9 @@ class Update(private val table: Table) {
     private var conditionClauses: Where? = null
     internal var filter: Filter? = null
 
-    fun update(init: (Update) -> Unit): Update {
-        return Update(table).apply(init)
+    fun update(block: Update.() -> Unit): Update {
+        block(this)
+        return this
     }
 
     fun updatePrimary(value: Int?, init: (Update) -> Unit): Update {
@@ -33,6 +34,7 @@ class Update(private val table: Table) {
             where { primaryKey eq value }
             init(this)
         }
+
         return updateWithCondition
     }
 
@@ -42,52 +44,41 @@ class Update(private val table: Table) {
     }
 
     fun where(init: Where.() -> Unit): Update {
-        val where = Where()
-        init(where)
-
+        val where = Where().apply(init)
         conditionClauses = where
-
         return this
     }
 
     fun filter(block: Filter.() -> Unit): Update {
-        filter = Filter(table)
-        block(filter!!)
+        filter = Filter(table).apply(block)
         return this
     }
 
     fun sqlArgs(): Query {
         require(nullableColumnsArgsValues.isNotEmpty()) { "No columns specified for update" }
-
         val sql = StringBuilder()
 
         sql.append("UPDATE ")
         sql.append(table.tableName)
         sql.append(" SET ")
 
-        var args = mutableListOf<Any?>()
-        nullableColumnsArgsValues.forEach { (column, value) ->
+        val args = mutableListOf<Any?>()
+        nullableColumnsArgsValues.forEachIndexed { index, (column, value) ->
             if (value == null) {
-                sql.append(column.key())
-                sql.append(" = COALESCE(?, ")
-                sql.append(column.key())
-                sql.append(")")
+                sql.append("${column.key()} = COALESCE(?, ${column.key()})")
             } else {
-                sql.append(column.key())
-                sql.append(" = ?")
+                sql.append("${column.key()} = ?")
             }
+            args.add(value)
 
-            if (nullableColumnsArgsValues.indexOfFirst { it.first == column } <
-                nullableColumnsArgsValues.size - 1) {
+            if (index < nullableColumnsArgsValues.size - 1) {
                 sql.append(", ")
             }
-
-            args.add(value)
         }
 
-        conditionClauses?.whereClauses()?.let {
-            sql.append(it.first)
-            args.addAll(it.second)
+        conditionClauses?.whereClauses()?.let { (clause, clauseArgs) ->
+            sql.append(clause)
+            args.addAll(clauseArgs)
         }
 
         return Query(sql.toString(), args)
