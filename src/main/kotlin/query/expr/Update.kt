@@ -43,6 +43,10 @@ class Update(private val table: Table) {
         return this
     }
 
+    infix fun <T : Any> Column<T>.to(value: T?) {
+        nullableColumnsArgsValues.add(Pair(this, value))
+    }
+
     fun where(init: Where.() -> Unit): Update {
         val where = Where().apply(init)
         conditionClauses = where
