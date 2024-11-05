@@ -5,7 +5,7 @@ import query.schema.Column
 import query.schema.Table
 import java.sql.Connection
 
-data class FilterResult(val ok: Boolean, val err: String, val field: String? = null)
+data class FilterResult(val ok: Boolean, val err: String? = null, val field: String? = null)
 
 class Filter(val table: Table) {
     private val filterFunctions = mutableListOf<(Connection) -> FilterResult>()
@@ -24,14 +24,14 @@ class Filter(val table: Table) {
                 .getOrThrow()
 
             if (exists == 1) {
-                FilterResult(false, msg)
+                FilterResult(false, msg, key())
             } else {
-                FilterResult(true, "")
+                FilterResult(true)
             }
         }
     }
 
-    fun <T: Any>uniqueComposite(
+    fun <T : Any> uniqueComposite(
         vararg columns: Pair<Column<T>, T?>,
         msg: String = "Composite key already exists"
     ) {
@@ -54,7 +54,7 @@ class Filter(val table: Table) {
                     columns.joinToString(",") { it.first.key() }
                 )
             } else {
-                FilterResult(true, "", null)
+                FilterResult(true)
             }
         }
     }
@@ -76,7 +76,7 @@ class Filter(val table: Table) {
             if (exists == 0) {
                 FilterResult(false, msg, key())
             } else {
-                FilterResult(true, "", null)
+                FilterResult(true)
             }
         }
     }
@@ -109,6 +109,6 @@ class Filter(val table: Table) {
                 return result
             }
         }
-        return FilterResult(true, "")
+        return FilterResult(true)
     }
 }
